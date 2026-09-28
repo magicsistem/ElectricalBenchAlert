@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased — scientific reconstruction
+
+- Move working Markdown documentation to ignored local_docs/; keep only README.md and CHANGELOG.md in public Git trees.
+- Rewrite the two baseline commits and v0.1.0 tag to remove other Markdown from published history; preserve the previous history privately.
+- Remove the active legacy implementation and obsolete drivers; retain nine original scientific MAT reference fixtures.
+- Add MATLAB family/noise generation, five controlled representations, common features, ECOC SVM/Random Forest utilities, paired family statistics and integration controls.
+- Final dataset selection, authoritative benchmarks, raw baselines and confirmed-event validation remain pending.
+
 ## 0.1.0 — Audited legacy baseline
 
 - Preserve supplied development algorithms, nine raw fixtures, and development dataset provenance hashes.

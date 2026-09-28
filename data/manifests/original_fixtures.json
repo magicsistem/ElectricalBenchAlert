@@ -1,0 +1,41 @@
+{
+  "scope": "original_nine_scientific_reference_fixtures",
+  "files": [
+    {
+      "path": "fixtures/dataset_fixture/signals/flicker_000000_clean.mat",
+      "sha256": "63a345343b107681f0903510d207639d0e60568571da4a0035a011b104a88bde"
+    },
+    {
+      "path": "fixtures/dataset_fixture/signals/harmonics_000000_clean.mat",
+      "sha256": "f6f270e174011ec27c9c2c7de0c4a74f74077dd7157f3a03fc93b51545136cab"
+    },
+    {
+      "path": "fixtures/dataset_fixture/signals/impulsive_transient_000000_clean.mat",
+      "sha256": "2351e366477b76daed1ee40bb5c31826d92837b980505614ce541d493181c76b"
+    },
+    {
+      "path": "fixtures/dataset_fixture/signals/interruption_000000_clean.mat",
+      "sha256": "0dabe681bdda284f1deeaca7807ab10db3f7f3ff53629d4cc760bf4465408edd"
+    },
+    {
+      "path": "fixtures/dataset_fixture/signals/normal_000000_clean.mat",
+      "sha256": "d53b4262f081370d5619047888992349b68ec28497064747ee46c3c10b218ed3"
+    },
+    {
+      "path": "fixtures/dataset_fixture/signals/notching_000000_clean.mat",
+      "sha256": "23ce112118b28db5f2c3dd68948ab07d32c1ed2b201bc5a9cd2869f45e85f24c"
+    },
+    {
+      "path": "fixtures/dataset_fixture/signals/oscillatory_transient_000000_clean.mat",
+      "sha256": "04feb8508b08fbf7a72d3d369a1bedbac0a4aa7911b7c08c1437ec9b5b1a0ac2"
+    },
+    {
+      "path": "fixtures/dataset_fixture/signals/voltage_sag_000000_clean.mat",
+      "sha256": "aabb351ab8a647f559ac7e6e014485adec7c72b187d9c5ab7e7edfcb5584e4b2"
+    },
+    {
+      "path": "fixtures/dataset_fixture/signals/voltage_swell_000000_clean.mat",
+      "sha256": "f69f3eaaa80c7daceb2615682717c8c8748d36d07bcac87c53d2f0d7ba7fb94f"
+    }
+  ]
+}

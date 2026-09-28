@@ -1,0 +1,134 @@
+{
+  "schema_version": "2.0.0",
+  "dataset_version": "2.0.0",
+  "method_version": "0.2.0-development",
+  "Fs": 10000,
+  "nominal_frequency_hz": 60,
+  "clip_duration_s": 1.0,
+  "master_seed": 20260928,
+  "split_seed": 928101,
+  "model_seed": 928201,
+  "stream_seed": 928301,
+  "classes": [
+    "normal",
+    "voltage_sag",
+    "voltage_swell",
+    "interruption",
+    "harmonics",
+    "flicker",
+    "oscillatory_transient",
+    "impulsive_transient",
+    "notching",
+    "voltage_sag_harmonics",
+    "voltage_swell_harmonics",
+    "harmonics_flicker"
+  ],
+  "primary_class_count": 9,
+  "severity_strata": 3,
+  "duration_strata": 4,
+  "families_per_cell": 20,
+  "split_per_block": {
+    "train": 14,
+    "validation": 3,
+    "test": 3
+  },
+  "snr_db": [
+    30,
+    20,
+    10,
+    5,
+    0,
+    -5
+  ],
+  "noise_realizations": 3,
+  "noise_reference": "clean_disturbed_record_energy",
+  "fundamental_frequency_range_hz": [
+    59.9,
+    60.1
+  ],
+  "base_rms_range_pu": [
+    0.98,
+    1.02
+  ],
+  "minimum_context_s": 0.1,
+  "bootstrap_replicates": 10000,
+  "permutation_replicates": 10000,
+  "learning_train_families_per_cell": [
+    3,
+    6,
+    9,
+    14
+  ],
+  "learning_max_f1_gain": 0.01,
+  "learning_ci_half_width": 0.03,
+  "stream_window_cycles": [
+    3,
+    6,
+    12,
+    24,
+    30
+  ],
+  "stream_hop_fractions": [
+    0.25,
+    0.5
+  ],
+  "svm_grid": {
+    "kernel": [
+      "linear",
+      "gaussian"
+    ],
+    "box_constraint": [
+      0.1,
+      1,
+      10
+    ],
+    "kernel_scale": [
+      0.3,
+      1,
+      3,
+      10
+    ]
+  },
+  "rf_grid": {
+    "trees": [
+      100,
+      300
+    ],
+    "min_leaf": [
+      1,
+      5,
+      10
+    ]
+  },
+  "runtime_warmups": 2,
+  "runtime_repetitions": 100,
+  "stft": {
+    "window_samples": 500,
+    "overlap_fraction": 0.5,
+    "window": "hann"
+  },
+  "dwt": {
+    "wavelet": "db4",
+    "level": 7
+  },
+  "cwt": {
+    "wavelet": "Morse",
+    "voices": 6,
+    "frequency_limits_hz": [
+      30,
+      4000
+    ],
+    "boundary": "reflection"
+  },
+  "st": {
+    "frequency_limits_hz": [
+      30,
+      4000
+    ],
+    "log_frequencies": 32,
+    "sigma_factor": 1,
+    "truncate_sigma": 4
+  },
+  "feature_schema_version": "2.0.0",
+  "regulatory_monitoring_status": "not_implemented"
+}

@@ -1,33 +1,44 @@
 # ElectricalBenchAlert
 
-Scientific MATLAB research for electrical disturbance detection. Current audited baseline: **v0.1.0 development**, not the final confirmed-event milestone.
+Scientific MATLAB research for electrical disturbance detection. Current status: **development toward v1.0.0**. The confirmed-event milestone has not yet been accepted.
 
-## Baseline requirements and reproduction
+## Requirements and verified checks
 
-Local MATLAB R2026b was used. Wavelet Toolbox and Statistics and Machine Learning Toolbox are required by the existing tests. Signal Processing, Deep Learning and Simulink are installed in the audited environment for the planned reconstruction.
+MATLAB R2026b, Signal Processing Toolbox, Wavelet Toolbox, Statistics and Machine Learning Toolbox and Deep Learning Toolbox. Scientific execution uses local MATLAB; generated data and results are ignored by Git.
 
 ```sh
 git clone https://github.com/magicsistem/ElectricalBenchAlert.git
 cd ElectricalBenchAlert
 matlab -batch "disp(version); ver"
-matlab -batch "setenv('PQ_DATASET_ROOT',fullfile(pwd,'fixtures','dataset_fixture')); startup; run_all_tests"
+matlab -batch "startup; test_signals; test_transforms; test_classifiers; test_statistics; test_pipeline"
 ```
 
-The six existing test functions pass against nine clean training fixtures. They do not establish classifier validation, dataset reproducibility or continuous detection. The inherited orchestrator fails in R2026b; see [execution evidence](docs/audit/BASELINE_EXECUTION.md).
+These five scientific test suites have been executed successfully. They cover deterministic waveforms, exact noise power, grouped splits, five transform controls, controlled classifiers, paired family statistics and pipeline/firewall checks. They do not yet establish final classifier performance or continuous confirmed-event performance. CNN/TCN and stream verification remain in progress.
 
-## Available evidence
+## Scientific scope
 
-- [Critical legacy audit](docs/audit/LEGACY_AUDIT.md)
-- [Source inventory and original digests](docs/audit/legacy_inventory.json)
-- [MATLAB environment](docs/audit/baseline_environment.json)
-- [MATLAB Code Analyzer output](docs/audit/baseline_checkcode.json)
-- [Baseline release notes](releases/v0.1.0.md)
-- [Acceptance outcomes](GATES.md)
+- Track A: FFT, STFT, DWT, CWT and band-limited S-Transform, a common 24-feature schema and ECOC SVM; Random Forest sensitivity.
+- Track B: lightweight 1-D CNN and causal TCN on nominal p.u. waveforms, preserving absolute amplitude.
+- Independent unit: family_id; every noise/crop derivative stays in its family's split.
+- Proposed dataset: nine core classes plus three bounded composite classes, 240 families/class initially. Final size requires development learning curves and confidence intervals.
+- Final test predictions remain sealed until source, dataset/split, offline models, streaming windows and temporal settings are hash-bound.
+- Endpoint: a phase-continuous simulated signal producing NORMAL → SUSPECTED → CONFIRMED.
 
-The temporary Python route and its outputs were removed from publication at the user request; they remain only in the private original audit snapshot. The source hash list describes 630 development records and 90 families; this checkout contains only nine raw MAT fixtures. No unavailable original waveform has been replaced with a synthetic approximation.
+Nine original MAT arrays remain as scientific reference fixtures, with [SHA-256 identities](data/manifests/original_fixtures.json). The original complete 630-record dataset is unavailable. Regeneration uses a separately versioned MATLAB generator and does not claim identity with absent historical records. The temporary Python route and active legacy implementation have been removed; the baseline remains in the v0.1.0 Git tag.
 
-## Scientific scope of the reconstruction
+## Development commands
 
-The required milestone is **signal → scientific dataset → DSP and classifier comparison → grouped inference → continuous windows → NORMAL → SUSPECTED → CONFIRMED**. A final v1.0.0 release requires executed MATLAB experiments and every acceptance outcome, including independent final stream evaluation. See PLAN.md as the supplied hypothesis under audit. Application and communication development are outside this phase.
+```sh
+matlab -batch "startup; generate_dataset"
+matlab -batch "startup; run_development('representations')"
+matlab -batch "startup; run_development('classifiers')"
+matlab -batch "startup; run_development('learning')"
+```
 
-Personal contributor identifiers were replaced by neutral baseline names before first publication. The original source bytes are preserved in a private local snapshot. Configured Git commit identity is used without alteration.
+These experiment drivers are under development; authoritative benchmark results and the final reproduction commands will be added after execution and review. No MQTT, ESP32, Wokwi, Flutter, transport or application persistence is implemented.
+
+## Repository documentation policy
+
+Only root README.md and CHANGELOG.md are versioned Markdown. Audit, plan, decisions, references, gate ledgers and working documentation are local in ignored folders; local_docs/ is explicitly ignored. Public release notes are maintained in GitHub Releases. Historical Git trees have been filtered to the same Markdown allowlist, as requested.
+
+Personal content identifiers and unnecessary private paths are excluded from publication. Existing configured Git author identity and credentials are retained.
