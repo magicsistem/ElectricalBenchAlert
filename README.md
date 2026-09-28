@@ -36,9 +36,3 @@ matlab -batch "startup; run_development('learning')"
 ```
 
 These experiment drivers are under development; authoritative benchmark results and the final reproduction commands will be added after execution and review. No MQTT, ESP32, Wokwi, Flutter, transport or application persistence is implemented.
-
-## Repository documentation policy
-
-Only root README.md and CHANGELOG.md are versioned Markdown. Audit, plan, decisions, references, gate ledgers and working documentation are local in ignored folders; local_docs/ is explicitly ignored. Public release notes are maintained in GitHub Releases. Historical Git trees have been filtered to the same Markdown allowlist, as requested.
-
-Personal content identifiers and unnecessary private paths are excluded from publication. Existing configured Git author identity and credentials are retained.
