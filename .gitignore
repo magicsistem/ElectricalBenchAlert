@@ -1,0 +1,14 @@
+cache/
+__pycache__/
+*.pyc
+*.asv
+*.m~
+.unlazy/
+.claude/settings.local.json
+.unlazy-hook-state.json
+results/
+data/generated/
+experiments/generated/
+*.log
+.DS_Store
+Thumbs.db

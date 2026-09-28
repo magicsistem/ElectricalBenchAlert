@@ -1,0 +1,47 @@
+\documentclass[11pt]{article}
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{amsmath,booktabs,graphicx,hyperref}
+\title{DSP avanzado y benchmark científico para perturbaciones de calidad de energía}
+\author{Legacy}
+\date{}
+\begin{document}
+\maketitle
+
+\section{Alcance}
+Este documento acompaña el paquete reproducible M1--M11. Los resultados numéricos
+finales se incorporarán únicamente después de ejecutar el pipeline completo sobre
+la versión congelada del dataset.
+
+\section{Métodos}
+Se comparan FFT, STFT, DWT, CWT y S-Transform con entradas idénticas. La selección
+de parámetros se realiza sobre train/validation y el conjunto test se reserva para
+evaluación.
+
+\section{DWT}
+Se evalúan db4, db6, db8, sym4, sym6, coif3 y coif5 con niveles válidos entre 3 y 7.
+Se extraen energía por banda, entropía wavelet y máximos de coeficientes.
+
+\section{CWT}
+Se utiliza un banco de filtros CWT configurable y se extraen medidas de energía,
+entropía, concentración y localización tiempo-frecuencia.
+
+\section{S-Transform}
+Se implementa una S-Transform discreta y limitada en banda, documentando
+explícitamente el vector de frecuencias evaluado.
+
+\section{Clasificación y métricas}
+El clasificador es deliberadamente ligero y se usa como instrumento de comparación.
+Se reportan accuracy, precision, recall, specificity, macro-F1, weighted-F1 y matriz
+de confusión.
+
+\section{Complejidad}
+El benchmark reporta tiempo, RTF, throughput y memoria de la representación.
+
+\section{Robustez y estadística}
+Se estudian 30, 20, 10, 5, 0 y -5 dB. Los intervalos de confianza se estiman
+mediante bootstrap por familia para respetar la dependencia entre variantes de SNR.
+
+\section{Resultados}
+\textit{Pendiente de la ejecución final reproducible en MATLAB.}
+
+\end{document}

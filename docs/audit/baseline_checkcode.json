@@ -1,0 +1,360 @@
+[
+  {
+    "file": "startup.m",
+    "diagnostics": []
+  },
+  {
+    "file": "+legacy/benchmarkComplexity.m",
+    "diagnostics": []
+  },
+  {
+    "file": "+legacy/bootstrapMacroF1ByFamily.m",
+    "diagnostics": []
+  },
+  {
+    "file": "+legacy/bootstrapTemporalByFamily.m",
+    "diagnostics": []
+  },
+  {
+    "file": "+legacy/buildFeatureTable.m",
+    "diagnostics": {
+      "id": "AGROW",
+      "message": "Variable appears to change size on every loop iteration. Consider preallocating for speed.",
+      "fix": 0,
+      "line": 32,
+      "column": [
+        5,
+        5
+      ]
+    }
+  },
+  {
+    "file": "+legacy/classificationMetrics.m",
+    "diagnostics": []
+  },
+  {
+    "file": "+legacy/cwtFeatures.m",
+    "diagnostics": []
+  },
+  {
+    "file": "+legacy/defaultConfig.m",
+    "diagnostics": []
+  },
+  {
+    "file": "+legacy/detectInterval.m",
+    "diagnostics": []
+  },
+  {
+    "file": "+legacy/dwtFeatures.m",
+    "diagnostics": []
+  },
+  {
+    "file": "+legacy/ensureDirs.m",
+    "diagnostics": []
+  },
+  {
+    "file": "+legacy/environmentInfo.m",
+    "diagnostics": []
+  },
+  {
+    "file": "+legacy/featureColumns.m",
+    "diagnostics": []
+  },
+  {
+    "file": "+legacy/fftAdapter.m",
+    "diagnostics": []
+  },
+  {
+    "file": "+legacy/fisherDiscriminability.m",
+    "diagnostics": []
+  },
+  {
+    "file": "+legacy/loadMetadata.m",
+    "diagnostics": []
+  },
+  {
+    "file": "+legacy/loadRecord.m",
+    "diagnostics": []
+  },
+  {
+    "file": "+legacy/loadSelectedConfig.m",
+    "diagnostics": []
+  },
+  {
+    "file": "+legacy/makeManifest.m",
+    "diagnostics": []
+  },
+  {
+    "file": "+legacy/paretoFront.m",
+    "diagnostics": []
+  },
+  {
+    "file": "+legacy/predictClassifier.m",
+    "diagnostics": []
+  },
+  {
+    "file": "+legacy/robustnessBySNR.m",
+    "diagnostics": {
+      "id": "MSNU",
+      "message": "A Code Analyzer message was once suppressed here, but the message is no longer generated.",
+      "fix": 1,
+      "line": 17,
+      "column": [
+        74,
+        84
+      ]
+    }
+  },
+  {
+    "file": "+legacy/runMethod.m",
+    "diagnostics": []
+  },
+  {
+    "file": "+legacy/sTransform.m",
+    "diagnostics": []
+  },
+  {
+    "file": "+legacy/sTransformFeatures.m",
+    "diagnostics": []
+  },
+  {
+    "file": "+legacy/selectDWT.m",
+    "diagnostics": []
+  },
+  {
+    "file": "+legacy/stftAdapter.m",
+    "diagnostics": []
+  },
+  {
+    "file": "+legacy/structToFeatureVector.m",
+    "diagnostics": []
+  },
+  {
+    "file": "+legacy/summaryStats.m",
+    "diagnostics": []
+  },
+  {
+    "file": "+legacy/temporalMetrics.m",
+    "diagnostics": []
+  },
+  {
+    "file": "+legacy/tfSummaryFeatures.m",
+    "diagnostics": []
+  },
+  {
+    "file": "+legacy/timeDomainNovelty.m",
+    "diagnostics": []
+  },
+  {
+    "file": "+legacy/trainClassifier.m",
+    "diagnostics": []
+  },
+  {
+    "file": "+legacy/validateDataset.m",
+    "diagnostics": []
+  },
+  {
+    "file": "+legacy/writeJson.m",
+    "diagnostics": []
+  },
+  {
+    "file": "scripts/00_preflight.m",
+    "diagnostics": {
+      "id": "BDFIL",
+      "message": "Invalid MATLAB file name. MATLAB file names must start with a letter, contain only letters, numbers, or underscores, and have no more than 2048 characters.",
+      "fix": 0,
+      "line": 0,
+      "column": [
+        0,
+        0
+      ]
+    }
+  },
+  {
+    "file": "scripts/01_m1_review.m",
+    "diagnostics": {
+      "id": "BDFIL",
+      "message": "Invalid MATLAB file name. MATLAB file names must start with a letter, contain only letters, numbers, or underscores, and have no more than 2048 characters.",
+      "fix": 0,
+      "line": 0,
+      "column": [
+        0,
+        0
+      ]
+    }
+  },
+  {
+    "file": "scripts/02_m2_dwt_select.m",
+    "diagnostics": {
+      "id": "BDFIL",
+      "message": "Invalid MATLAB file name. MATLAB file names must start with a letter, contain only letters, numbers, or underscores, and have no more than 2048 characters.",
+      "fix": 0,
+      "line": 0,
+      "column": [
+        0,
+        0
+      ]
+    }
+  },
+  {
+    "file": "scripts/03_m3_cwt_smoke.m",
+    "diagnostics": {
+      "id": "BDFIL",
+      "message": "Invalid MATLAB file name. MATLAB file names must start with a letter, contain only letters, numbers, or underscores, and have no more than 2048 characters.",
+      "fix": 0,
+      "line": 0,
+      "column": [
+        0,
+        0
+      ]
+    }
+  },
+  {
+    "file": "scripts/04_m4_st_smoke.m",
+    "diagnostics": {
+      "id": "BDFIL",
+      "message": "Invalid MATLAB file name. MATLAB file names must start with a letter, contain only letters, numbers, or underscores, and have no more than 2048 characters.",
+      "fix": 0,
+      "line": 0,
+      "column": [
+        0,
+        0
+      ]
+    }
+  },
+  {
+    "file": "scripts/05_m5_extract_features.m",
+    "diagnostics": [
+      {
+        "id": "BDFIL",
+        "message": "Invalid MATLAB file name. MATLAB file names must start with a letter, contain only letters, numbers, or underscores, and have no more than 2048 characters.",
+        "fix": 0,
+        "line": 0,
+        "column": [
+          0,
+          0
+        ]
+      },
+      {
+        "id": "MSNU",
+        "message": "A Code Analyzer message was once suppressed here, but the message is no longer generated.",
+        "fix": 1,
+        "line": 7,
+        "column": [
+          45,
+          55
+        ]
+      }
+    ]
+  },
+  {
+    "file": "scripts/06_m6_train_classifier.m",
+    "diagnostics": {
+      "id": "BDFIL",
+      "message": "Invalid MATLAB file name. MATLAB file names must start with a letter, contain only letters, numbers, or underscores, and have no more than 2048 characters.",
+      "fix": 0,
+      "line": 0,
+      "column": [
+        0,
+        0
+      ]
+    }
+  },
+  {
+    "file": "scripts/07_m7_classification_metrics.m",
+    "diagnostics": {
+      "id": "BDFIL",
+      "message": "Invalid MATLAB file name. MATLAB file names must start with a letter, contain only letters, numbers, or underscores, and have no more than 2048 characters.",
+      "fix": 0,
+      "line": 0,
+      "column": [
+        0,
+        0
+      ]
+    }
+  },
+  {
+    "file": "scripts/08_m8_temporal_metrics.m",
+    "diagnostics": {
+      "id": "BDFIL",
+      "message": "Invalid MATLAB file name. MATLAB file names must start with a letter, contain only letters, numbers, or underscores, and have no more than 2048 characters.",
+      "fix": 0,
+      "line": 0,
+      "column": [
+        0,
+        0
+      ]
+    }
+  },
+  {
+    "file": "scripts/09_m9_complexity.m",
+    "diagnostics": {
+      "id": "BDFIL",
+      "message": "Invalid MATLAB file name. MATLAB file names must start with a letter, contain only letters, numbers, or underscores, and have no more than 2048 characters.",
+      "fix": 0,
+      "line": 0,
+      "column": [
+        0,
+        0
+      ]
+    }
+  },
+  {
+    "file": "scripts/10_m10_noise_robustness.m",
+    "diagnostics": {
+      "id": "BDFIL",
+      "message": "Invalid MATLAB file name. MATLAB file names must start with a letter, contain only letters, numbers, or underscores, and have no more than 2048 characters.",
+      "fix": 0,
+      "line": 0,
+      "column": [
+        0,
+        0
+      ]
+    }
+  },
+  {
+    "file": "scripts/11_m11_statistics_pareto.m",
+    "diagnostics": {
+      "id": "BDFIL",
+      "message": "Invalid MATLAB file name. MATLAB file names must start with a letter, contain only letters, numbers, or underscores, and have no more than 2048 characters.",
+      "fix": 0,
+      "line": 0,
+      "column": [
+        0,
+        0
+      ]
+    }
+  },
+  {
+    "file": "scripts/run_legacy_pipeline.m",
+    "diagnostics": []
+  },
+  {
+    "file": "tests/run_all_tests.m",
+    "diagnostics": []
+  },
+  {
+    "file": "tests/test_cwt.m",
+    "diagnostics": []
+  },
+  {
+    "file": "tests/test_dataset_contract.m",
+    "diagnostics": []
+  },
+  {
+    "file": "tests/test_dwt.m",
+    "diagnostics": []
+  },
+  {
+    "file": "tests/test_feature_schema.m",
+    "diagnostics": []
+  },
+  {
+    "file": "tests/test_metrics.m",
+    "diagnostics": []
+  },
+  {
+    "file": "tests/test_s_transform.m",
+    "diagnostics": []
+  }
+]

@@ -1,0 +1,70 @@
+{
+  "package_version": "legacy-dsp-v0.1.0",
+  "seed": 20260926,
+  "nominal_frequency_hz": 60,
+  "methods": [
+    "FFT",
+    "STFT",
+    "DWT",
+    "CWT",
+    "ST"
+  ],
+  "dataset_contract_version": "source-dataset-v1-current",
+  "stft": {
+    "window_size": 512,
+    "overlap": 256,
+    "window_type": "blackman"
+  },
+  "dwt": {
+    "candidate_wavelets": [
+      "db4",
+      "db6",
+      "db8",
+      "sym4",
+      "sym6",
+      "coif3",
+      "coif5"
+    ],
+    "candidate_levels": [
+      3,
+      4,
+      5,
+      6,
+      7
+    ],
+    "default_before_selection": {
+      "wavelet": "db4",
+      "level": 5
+    }
+  },
+  "cwt": {
+    "voices_per_octave": 12,
+    "min_frequency_hz": 30,
+    "max_frequency_hz": 4000
+  },
+  "s_transform": {
+    "min_frequency_hz": 30,
+    "max_frequency_hz": 4000,
+    "num_log_frequencies": 64,
+    "gaussian_sigma_factor": 1.0,
+    "truncate_sigma": 4.0
+  },
+  "classifier": {
+    "type": "svm_ecoc",
+    "standardize": true
+  },
+  "statistics": {
+    "bootstrap_reps": 1000,
+    "alpha": 0.05,
+    "grouping_unit": "family_id"
+  },
+  "snr_db": [
+    30,
+    20,
+    10,
+    5,
+    0,
+    -5
+  ],
+  "note": "Authoritative settings are in +legacy/defaultConfig.m; this JSON is a human-readable frozen mirror."
+}
