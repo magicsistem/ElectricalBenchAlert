@@ -17,7 +17,20 @@ corrupt=cached;corrupt.X(1,1)=corrupt.X(1,1)+.001;save(cachePath,'-struct','corr
 rejects(@() eba.extract(chosen,'FFT',params,cfg,'development',[Inf 20],1:2),'eba:FeatureCacheMutation');
 corrupt=cached;corrupt.P.class_id(1)=2;save(cachePath,'-struct','corrupt','-v7');
 rejects(@() eba.extract(chosen,'FFT',params,cfg,'development',[Inf 20],1:2),'eba:FeatureCacheMutation');
+corrupt=cached;corrupt.P.SNR_db(1)=NaN;
+assert(strcmp(jsonencode(table2struct(corrupt.P)),jsonencode(table2struct(cached.P))), ...
+    'Positive control must expose the JSON Inf/NaN collision.');
+save(cachePath,'-struct','corrupt','-v7');
+rejects(@() eba.extract(chosen,'FFT',params,cfg,'development',[Inf 20],1:2),'eba:FeatureCacheMutation');
+corrupt=cached;corrupt.X=reshape(corrupt.X,24,[]);
+assert(strcmp(eba.hash(corrupt.X,'numeric'),eba.hash(cached.X,'numeric')));
+save(cachePath,'-struct','corrupt','-v7');
+rejects(@() eba.extract(chosen,'FFT',params,cfg,'development',[Inf 20],1:2),'eba:FeatureCacheMutation');
 clear cacheCleanup;
+rejects(@() eba.extract(chosen,'FFT',params,cfg,'development',[NaN 20],1:2),'eba:ExtractSNR');
+rejects(@() eba.extract(chosen,'FFT',params,cfg,'development',[Inf Inf 20],1:2),'eba:ExtractSNR');
+rejects(@() eba.extract(chosen,'FFT',params,cfg,'development',[Inf 20],[1 1]),'eba:ExtractRealization');
+rejects(@() eba.extract(chosen,'FFT',params,cfg,'structural',[Inf 20],1:2),'eba:ExtractMode');
 changedCfg=cfg;changedCfg.Fs=9000;
 rejects(@() eba.extract(chosen,'FFT',params,changedCfg,'development',[Inf 20],1:2),'eba:Sampling');
 assert(size(X,2)==24 && size(X,1)==height(chosen)*3 && numel(unique(P.family_id))==height(chosen));

@@ -30,9 +30,10 @@ Nine original MAT arrays remain as scientific reference fixtures, with [SHA-256 
 
 ```sh
 matlab -batch "startup; generate_dataset"
+matlab -batch "startup; verify_dataset_records; verify_dataset_records"
 matlab -batch "startup; run_development('representations')"
 matlab -batch "startup; run_development('classifiers')"
 matlab -batch "startup; run_development('learning')"
 ```
 
-Development representation selection and ten DSP/classifier fits have executed in MATLAB. Initial learning curves have executed and rejected the current dataset size for FFT, STFT and DWT under the declared stability and confidence-interval criteria. Expansion, full raw baselines and final streaming evaluation remain pending; development results do not establish final performance. No MQTT, ESP32, Wokwi, Flutter, transport or application persistence is implemented.
+Development representation selection and ten DSP/classifier fits have executed in MATLAB. Initial learning curves have executed and rejected the current dataset size for FFT, STFT and DWT under the declared stability and confidence-interval criteria. The expanded candidate has 5,760 independent families and 109,440 derived records; two complete MATLAB regenerations produced an identical binary catalog, with maximum SNR deviation 1.78e-14 dB. Its size is still provisional. Expansion, full raw baselines and final streaming evaluation remain pending; development results do not establish final performance. No MQTT, ESP32, Wokwi, Flutter, transport or application persistence is implemented.

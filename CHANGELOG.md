@@ -9,6 +9,8 @@
 - Add native model compaction and paired development sensitivity drivers; their experimental executions remain separate from final acceptance.
 - Verify canonical record identities, cache payload integrity, independent stream noise and onset alignment controls in MATLAB.
 - Execute initial learning curves; three representations reject the provisional dataset size.
+- Expand the next candidate by complete family blocks and regenerate all 109,440 records twice with identical catalog content in MATLAB.
+- Control one shared classifier configuration across representations and reject JSON Inf/NaN cache collisions.
 - Final dataset size selection, full raw baselines and independent confirmed-event evaluation remain pending.
 
 ## 0.1.0 — Audited legacy baseline
