@@ -48,15 +48,41 @@ S=load(selectionFile);assert(strcmp(S.config_hash,eba.hash(fullfile(cfg.root,'co
     'eba:DevelopmentMutation','Configuration changed since representation selection.');
 if stage=="all" || stage=="learning"
     assert(isfile(classifierFile),'eba:DevelopmentOrder','Select classifier hyperparameters before learning curves.');
-    classifierSelection=load(classifierFile,'models');
+    selectedModels=cell(5,1);modelPaths=strings(5,1);modelHashes=strings(5,1);
+    for m=1:5
+        name="model_"+lower(methods(m))+"_svm.mat";path=fullfile(cfg.output,name);
+        stored=load(path,'model');selectedModels{m}=stored.model;modelPaths(m)=path;modelHashes(m)=eba.hash(path,'file');
+    end
+    sources={'+eba/fit.m','+eba/predict.m','+eba/familyStats.m','+eba/metrics.m', ...
+        '+eba/features.m','+eba/record.m','+eba/waveform.m','+eba/noise.m','+eba/subsetFamilies.m', ...
+        '+eba/learningAcceptance.m','scripts/run_development.m'};
+    sourceHashes=cellfun(@(p) eba.hash(fullfile(cfg.root,p),'file'),sources,'UniformOutput',false);
+    learningSignature=eba.hash(jsonencode(struct('config',S.config_hash,'families',eba.hash(jsonencode(table2struct(F))), ...
+        'model_sha256',modelHashes,'parameters',{S.selected},'source_sha256',{sourceHashes})));
+    checkpointFolder=fullfile(cfg.output,'learning_checkpoints');if ~isfolder(checkpointFolder),mkdir(checkpointFolder);end
     rows=cell(5,numel(cfg.learning_train_families_per_cell)); curves=cell(size(rows));
     for m=1:5
-        [X,P]=eba.extract(F,methods(m),S.selected{m},cfg,'development');
+        [X,P,info]=eba.extract(F,methods(m),S.selected{m},cfg,'development');
         for j=1:numel(cfg.learning_train_families_per_cell)
             n=cfg.learning_train_families_per_cell(j);[nested,cal]=eba.subsetFamilies(F,n,3);
             train=P.split=="train" & ismember(P.family_id,nested.family_id) & ~ismember(P.family_id,cal);
             val=P.split=="validation";
-            model=eba.fit(X(train,:),P.class_id(train),cfg,'SVM',classifierSelection.models{m,1}.hyperparameters);
+            signature=eba.hash(jsonencode(struct('run',learningSignature,'method',methods(m),'train_per_cell',n)));
+            checkpointPath=fullfile(checkpointFolder,signature+".mat");
+            if isfile(checkpointPath)
+                saved=load(checkpointPath,'checkpoint');assert(strcmp(saved.checkpoint.signature,signature),'eba:LearningMutation','Learning checkpoint identity changed.');
+                rows{m,j}=saved.checkpoint.row;curves{m,j}=saved.checkpoint.details;
+                fprintf('LEARNING_CHECKPOINT_REUSED %s train_per_cell=%d\n',methods(m),n);continue;
+            end
+            reference=selectedModels{m};standardized=(X(train,reference.keep)-reference.mean(reference.keep))./reference.scale(reference.keep);
+            reuse=isprop(reference.fitted,'X') && isprop(reference.fitted,'Y') && ...
+                isequaln(reference.fitted.X,standardized) && isequaln(double(reference.fitted.Y),P.class_id(train)) && ...
+                isequal(unique(P.family_id(train)),reference.training_family_ids) && ...
+                strcmp(info.family_hash,reference.training_dataset_hash) && reference.seed==cfg.model_seed && ...
+                isequaln(reference.mean,mean(X(train,:),1)) && isequaln(reference.scale,std(X(train,:),0,1));
+            if reuse,model=reference;
+            else,model=eba.fit(X(train,:),P.class_id(train),cfg,'SVM',reference.hyperparameters);end
+            fittingInput=(X(train,model.keep)-model.mean(model.keep))./model.scale(model.keep);
             pred=eba.predict(model,X(val,:)); statCfg=cfg;statCfg.classes=cfg.classes(1:cfg.primary_class_count);
             [summary,~,~,details]=eba.familyStats(P(val,:),pred,methods(m),statCfg);
             rows{m,j}=table(methods(m),n,(n-1)*12,numel(unique(P.family_id(train))),sum(train), ...
@@ -64,21 +90,21 @@ if stage=="all" || stage=="learning"
                 'VariableNames',{'method','train_per_cell','fit_families_per_class','n_fit_families','n_fit_records', ...
                 'macro_f1','ci_low','ci_high'});
             curves{m,j}=details;
+            checkpoint=struct('signature',signature,'row',rows{m,j},'details',details,'predictions',pred, ...
+                'fit_family_ids',unique(P.family_id(train)),'validation_family_ids',unique(P.family_id(val)), ...
+                'reused_exact_full_fit',reuse,'fitting_input_sha256',eba.hash(fittingInput,'numeric'),'reference_model_sha256',modelHashes(m), ...
+                'reference_model_path',erase(modelPaths(m),[cfg.root filesep]));
+            save(checkpointPath,'checkpoint','-v7');
             fprintf('LEARNING %s families/class=%d MacroF1=%.6f CI=[%.6f %.6f]\n',methods(m),(n-1)*12, ...
                 summary.macro_f1,summary.macro_f1_ci_low,summary.macro_f1_ci_high);
         end
     end
     learning=vertcat(rows{:});
-    acceptance=table(methods,false(5,1),zeros(5,1),zeros(5,1),'VariableNames',{'method','accepted','largest_recent_gain','final_ci_half_width'});
-    for m=1:5
-        t=sortrows(learning(learning.method==methods(m),:),'train_per_cell');
-        gain=diff(t.macro_f1);recent=gain(max(1,end-1):end);width=(t.ci_high(end)-t.ci_low(end))/2;
-        acceptance.largest_recent_gain(m)=max(recent);acceptance.final_ci_half_width(m)=width;
-        acceptance.accepted(m)=all(recent<=cfg.learning_max_f1_gain) && width<=cfg.learning_ci_half_width;
-    end
+    acceptance=eba.learningAcceptance(learning,methods,cfg);
     save(learningFile,'learning','acceptance','curves','-v7');
     writetable(learning,fullfile(cfg.output,'development_learning.csv'));writetable(acceptance,fullfile(cfg.output,'development_size_acceptance.csv'));
-    eba.manifest('development_learning',cfg,struct('scope','train_validation_only','acceptance',table2struct(acceptance)), ...
+    eba.manifest('development_learning',cfg,struct('scope','train_validation_only','acceptance',table2struct(acceptance),'learning_signature',learningSignature, ...
+        'checkpoint_policy','immutable input/source/model-bound point checkpoints; exact full-fitting model reuse verified against native stored X/Y, family IDs and training statistics'), ...
         {learningFile,fullfile(cfg.output,'development_learning.csv'),fullfile(cfg.output,'development_size_acceptance.csv')});
 end
 if stage=="all" || stage=="classifiers"

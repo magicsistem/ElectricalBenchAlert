@@ -22,6 +22,14 @@ original=eba.config();testRows=eba.families(20,original);testRows=testRows(testR
 rejects(@() eba.extract(testRows(1,:),'FFT',params,original,'development',Inf,1),'eba:TestFirewall');
 rejects(@() eba.selectClassifier(X,assignTest(P),cfg,'SVM',cal),'eba:TestFirewall');
 rejects(@() eba.requireFrozen(original),'eba:TestFirewall');
+% Row/column method lists agree; worsening curves cannot masquerade as stability.
+learning=table(repelem(["FFT";"STFT"],3),repmat([3;6;9],2,1), ...
+    [.5;.505;.509;.8;.6;.4],[.48;.485;.489;.78;.58;.38],[.52;.525;.529;.82;.62;.42], ...
+    'VariableNames',{'method','train_per_cell','macro_f1','ci_low','ci_high'});
+accept=eba.learningAcceptance(learning,["FFT","STFT"],original);
+assert(isequal(accept,eba.learningAcceptance(learning,["FFT";"STFT"],original)) && accept.accepted(1) && ~accept.accepted(2));
+wide=learning;wide.ci_low(3)=.4;wide.ci_high(3)=.7;reject=eba.learningAcceptance(wide,["FFT","STFT"],original);assert(~reject.accepted(1));
+invalid=learning;invalid.train_per_cell(2)=3;rejects(@() eba.learningAcceptance(invalid,["FFT","STFT"],original),'eba:LearningCurve');
 % Typed/hash mutation positive controls run separately in test_firewall.
 fprintf('PIPELINE_INTEGRATION_TESTS_PASS families=%d records=%d features=%d\n',height(chosen),height(P),size(X,2));
 end
