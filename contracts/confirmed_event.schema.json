@@ -4,24 +4,112 @@
   "title": "Confirmed synthetic research event",
   "description": "Local output only. Times are simulated seconds from sequence origin. Confidence is the minimum calibrated supporting-window score, not an event probability. Severity is a project estimate, not a regulatory grade.",
   "type": "object",
-  "required": ["event_id", "status", "class", "severity", "estimated_start", "confirmation_time", "duration_so_far", "confidence", "supporting_windows", "method_version", "model_version", "dataset_version", "git_commit", "sequence_id"],
+  "required": [
+    "event_id",
+    "status",
+    "class",
+    "severity",
+    "estimated_start",
+    "confirmation_time",
+    "duration_so_far",
+    "confidence",
+    "supporting_windows",
+    "method_version",
+    "model_version",
+    "dataset_version",
+    "git_commit",
+    "sequence_id",
+    "confidence_calibrated",
+    "regulatory_monitoring_status"
+  ],
   "properties": {
-    "event_id": {"type": "string", "minLength": 1},
-    "status": {"const": "CONFIRMED"},
-    "class": {"enum": ["voltage_sag", "voltage_swell", "interruption", "harmonics", "flicker", "oscillatory_transient", "impulsive_transient", "notching", "voltage_sag_harmonics", "voltage_swell_harmonics", "harmonics_flicker"]},
-    "severity": {"enum": ["unknown", "low", "medium", "high"]},
-    "estimated_start": {"type": "number", "minimum": 0},
-    "confirmation_time": {"type": "number", "minimum": 0},
-    "duration_so_far": {"type": "number", "exclusiveMinimum": 0},
-    "confidence": {"type": "number", "minimum": 0, "maximum": 1},
-    "confidence_calibrated": {"const": true},
-    "supporting_windows": {"type": "array", "minItems": 1, "items": {"type": "object", "required": ["window_start_s", "window_end_s", "decision_time_s", "class_id", "evidence_score"]}},
-    "method_version": {"type": "string", "minLength": 1},
-    "model_version": {"type": "string", "minLength": 1},
-    "dataset_version": {"type": "string", "minLength": 1},
-    "git_commit": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
-    "sequence_id": {"type": "string", "minLength": 1},
-    "regulatory_monitoring_status": {"const": "not_implemented"}
+    "event_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "status": {
+      "const": "CONFIRMED"
+    },
+    "class": {
+      "enum": [
+        "voltage_sag",
+        "voltage_swell",
+        "interruption",
+        "harmonics",
+        "flicker",
+        "oscillatory_transient",
+        "impulsive_transient",
+        "notching",
+        "voltage_sag_harmonics",
+        "voltage_swell_harmonics",
+        "harmonics_flicker"
+      ]
+    },
+    "severity": {
+      "enum": [
+        "unknown",
+        "low",
+        "medium",
+        "high"
+      ]
+    },
+    "estimated_start": {
+      "type": "number",
+      "minimum": 0
+    },
+    "confirmation_time": {
+      "type": "number",
+      "minimum": 0
+    },
+    "duration_so_far": {
+      "type": "number",
+      "exclusiveMinimum": 0
+    },
+    "confidence": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "confidence_calibrated": {
+      "const": true
+    },
+    "supporting_windows": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": [
+          "window_start_s",
+          "window_end_s",
+          "decision_time_s",
+          "class_id",
+          "evidence_score"
+        ]
+      }
+    },
+    "method_version": {
+      "type": "string",
+      "minLength": 1
+    },
+    "model_version": {
+      "type": "string",
+      "minLength": 1
+    },
+    "dataset_version": {
+      "type": "string",
+      "minLength": 1
+    },
+    "git_commit": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{40}$"
+    },
+    "sequence_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "regulatory_monitoring_status": {
+      "const": "not_implemented"
+    }
   },
   "additionalProperties": true
 }

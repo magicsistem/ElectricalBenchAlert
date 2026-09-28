@@ -22,15 +22,7 @@ original=eba.config();testRows=eba.families(20,original);testRows=testRows(testR
 rejects(@() eba.extract(testRows(1,:),'FFT',params,original,'development',Inf,1),'eba:TestFirewall');
 rejects(@() eba.selectClassifier(X,assignTest(P),cfg,'SVM',cal),'eba:TestFirewall');
 rejects(@() eba.requireFrozen(original),'eba:TestFirewall');
-% Local positive-control freeze, isolated from the real experiment.
-folder=tempname;mkdir(folder);cleanup=onCleanup(@() rmdir(folder,'s'));mkdir(fullfile(folder,'config'));
-copyfile(fullfile(original.root,'config','research_v2.json'),fullfile(folder,'config','research_v2.json'));
-eba.json(fullfile(folder,'bound.json'),struct('value',1));testCfg=original;testCfg.root=folder;
-freeze=struct('test_access_authorized',false,'config_sha256',eba.hash(fullfile(folder,'config','research_v2.json'),'file'), ...
-    'bound_files',struct('path','bound.json','sha256',eba.hash(fullfile(folder,'bound.json'),'file')));
-eba.json(fullfile(folder,'FROZEN_EXPERIMENT.json'),freeze);rejects(@() eba.requireFrozen(testCfg),'eba:TestFirewall');
-freeze.test_access_authorized=true;eba.json(fullfile(folder,'FROZEN_EXPERIMENT.json'),freeze);eba.requireFrozen(testCfg);
-eba.json(fullfile(folder,'bound.json'),struct('value',2));rejects(@() eba.requireFrozen(testCfg),'eba:TestFirewall');
+% Typed/hash mutation positive controls run separately in test_firewall.
 fprintf('PIPELINE_INTEGRATION_TESTS_PASS families=%d records=%d features=%d\n',height(chosen),height(P),size(X,2));
 end
 function P=assignTest(P)

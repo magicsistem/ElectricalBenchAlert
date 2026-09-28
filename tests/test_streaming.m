@@ -13,6 +13,11 @@ for i=1:height(truth),normal(idx>=truth.start_sample(i)&idx<truth.end_sample(i))
 assert(isequal(x(normal),base(normal)) && all(truth.end_sample>truth.start_sample));
 steady=truth.steady_activation;assert(all(truth.physical_duration_s(steady)>=1 & truth.physical_duration_s(steady)<=3));
 assert(all(abs(truth.physical_duration_s(~steady)-truth.canonical_physical_duration_s(~steady))<1e-12));
+closeCfg=cfg;closeCfg.stream_gap_s=.075;
+close=eba.continuousSchedule(picked,closeCfg,Inf,'spacing_control',cfg.stream_seed);
+assert(abs(close.normal_exposure_s-.075*(height(picked)+1))<1e-12 && close.normal_gap_s==.075);
+assert(all(close.events.start_sample(2:end)-close.events.end_sample(1:end-1)==750));
+closeCfg.stream_gap_s=0;rejects(@() eba.continuousSchedule(picked,closeCfg,Inf,'bad',7),'eba:StreamSpacing');
 noisy=s;noisy.snr_db=20;[z,~,m]=eba.continuousSignal(noisy,idx,cfg);
 pieces=[eba.continuousSignal(noisy,idx(1:10000),cfg);eba.continuousSignal(noisy,idx(10001:end),cfg)];
 assert(isequal(z,pieces) && abs(m.measured_nominal_snr_db-20)<1e-10);
@@ -50,6 +55,12 @@ bad=prediction(0,2,.8);bad.actual_onset=0;rejects(@() eba.stateStep([],bad,setti
 bad=prediction(0,2,.8);bad.decision_time_s=.05;rejects(@() eba.stateStep([],bad,settings),'eba:StateCausality');
 state=eba.stateStep([],prediction(0,2,.8),settings);rejects(@() eba.stateStep(state,prediction(0,2,.8),settings),'eba:StateCausality');
 
+changed=settings;changed.threshold_on=.8;
+rejects(@() eba.stateStep(state,prediction(.075,2,.9),changed),'eba:StateSettings');
+changed=settings;changed.git_commit='short';rejects(@() eba.stateStep([],prediction(0,2,.9),changed),'eba:StateSettings');
+changed=settings;changed.confidence_calibrated=1;rejects(@() eba.stateStep([],prediction(0,2,.9),changed),'eba:StateSettings');
+
+changed=settings;changed.confidence_calibrated=false;rejects(@() eba.stateStep([],prediction(0,2,.9),changed),'eba:StateSettings');
 gt=table(["s1";"s1";"s2"],["f1";"f2";"f3"],[2;3;2],[1;3;1],[2;4;2], ...
     'VariableNames',{'sequence_id','family_id','class_id','start_s','end_s'});
 est=table(["s1";"s1";"s1";"s2"],[2;2;3;3],[1;1.2;3;1],[2;1.8;4;2],[1.2;1.3;3.2;1.2], ...
@@ -77,6 +88,65 @@ normalExposure=table(["n1";"n2"],[60;60],["normal_f";"normal_f"], ...
 r=eba.eventMetrics(gt([],:),est([],:),normalExposure,cfg);
 assert(r.n_independent_clusters==1 && r.n_independent_families==1 && r.normal_exposure_s==120);
 cfg.temporal_bootstrap_replicates=0;r=eba.eventMetrics(gt([],:),est([],:),60,cfg);assert(r.false_alarms==0 && r.false_alarms_per_minute==0);
+% Censored confirmations still count; unavailable full end metrics remain undefined.
+open=early;open.confirmation_time_s=1.2;open.estimated_start_s=1;open.estimated_end_s=NaN;open.observed_until_s=2;
+r=eba.eventMetrics(gt(1,:),open,60,cfg);
+assert(r.n_matched_events==1 && r.n_censored_estimates==1 && r.n_completed_matches==0 && ...
+    r.recall==1 && isnan(r.mean_iou) && isnan(r.mean_absolute_end_error_s) && abs(r.mean_latency_s-.2)<1e-12);
+shortTruth=gt(1,:);shortTruth.end_s=1.001;
+short=est(1,:);short.estimated_start_s=.99;short.estimated_end_s=1.05;short.confirmation_time_s=1.025;
+r=eba.eventMetrics(shortTruth,short,60,cfg);
+assert(r.n_matched_events==1 && r.mean_iou<.1,'Detection and boundary localization were conflated for a millisecond event.');
+strict=cfg;strict.event_iou_threshold=.1;r=eba.eventMetrics(shortTruth,short,60,strict);assert(r.n_matched_events==0);
+beforeSupport=short;beforeSupport.confirmation_time_s=1;beforeSupport.estimated_end_s=2;
+r=eba.eventMetrics(shortTruth,beforeSupport,60,cfg);assert(r.n_matched_events==0, ...
+    'An alarm supported entirely before the onset was matched using its later held interval.');
+ongoingTruth=gt(1,:);ongoingTruth.end_s=10;r=eba.eventMetrics(ongoingTruth,open,60,cfg);
+assert(r.n_matched_events==1 && isnan(r.mean_iou) && r.n_completed_matches==0, ...
+    'Prefix detection was penalized using an unobserved future truth duration.');
+open.class_id=3;r=eba.eventMetrics(gt(1,:),open,60,cfg);
+assert(r.n_estimated_events==1 && r.false_alarms==1 && r.false_alarms_per_minute==1 && r.recall==0);
+open.observed_until_s=1.1;rejects(@() eba.eventMetrics(gt(1,:),open,60,cfg),'eba:EventBoundary');
+confirmation=immutable;ended=confirmation;ended.estimated_end_s=.8;
+rows=eba.eventEstimates(confirmation,struct([]),1);
+assert(height(rows)==1 && isnan(rows.estimated_end_s) && rows.observed_until_s==1);
+rows=eba.eventEstimates(confirmation,ended,1);assert(rows.estimated_end_s==.8);
+ended.confirmation_time_s=.7;rejects(@() eba.eventEstimates(confirmation,ended,1),'eba:EventIdentity');
+rejects(@() eba.eventEstimates([confirmation confirmation],struct([]),1),'eba:EventIdentity');
+% Actual synthetic waveform -> DSP -> calibrated unit model -> stop on CONFIRMED.
+parameters=struct('nominal_frequency_hz',60,'expected_samples',500);t=(0:499)'/cfg.Fs;
+gains=[.98 1 1.02 .15 .25 .35];frequencies=[59.9 60 60.1];phases=(0:3)*pi/2;
+X=zeros(numel(gains)*numel(frequencies)*numel(phases),24);labels=zeros(size(X,1),1);row=0;
+for g=1:numel(gains)
+    for f=frequencies
+        for phase=phases
+            row=row+1;X(row,:)=eba.features(sqrt(2)*gains(g)*sin(2*pi*f*t+phase),cfg.Fs,'FFT',parameters);
+            labels(row)=1+(g>3);
+        end
+    end
+end
+model=eba.fit(X,labels,cfg,'SVM',struct('kernel','linear','box_constraint',1,'kernel_scale',1));
+calX=zeros(8,24);calLabels=repelem([1;2],4);row=0;
+for gain=[1.01 .2]
+    for f=[59.95 60.05]
+        for phase=[.37 2.13]
+            row=row+1;calX(row,:)=eba.features(sqrt(2)*gain*sin(2*pi*f*t+phase),cfg.Fs,'FFT',parameters);
+        end
+    end
+end
+model=eba.calibrate(model,calX,calLabels,"unit_cal_"+string((1:8)'));
+model.method="FFT";model.parameters=parameters;model.window_samples=500;model.hop_samples=125;
+fixture=F(find(F.class_id==2 & F.split=="validation" & F.severity_stratum==3 & F.duration_stratum==4,1),:);
+unitSchedule=eba.continuousSchedule(fixture,cfg,Inf,'unit_continuous_confirmation',121);
+unitSettings=settings;unitSettings.min_evidence_s=.05;unitSettings.refractory_s=0;
+unitCfg=cfg;unitCfg.temporal_bootstrap_replicates=0;
+result=eba.processStream(unitSchedule,model,unitSettings,unitCfg,true);
+assert(result.final_state.phase=="CONFIRMED" && result.stopped_at_confirmation && ...
+    numel(result.confirmed_events)==1 && result.censored_confirmations==1 && height(result.estimated_events)==1);
+assert(any(result.phases=="NORMAL") && any(result.phases=="SUSPECTED") && result.phases(end)=="CONFIRMED");
+assert(result.metrics.n_matched_events==1 && result.metrics.false_alarms==0 && result.metrics.n_censored_estimates==1);
+assert(isnan(result.metrics.mean_absolute_end_error_s) && result.observed_until_s<unitSchedule.duration_s);
+assert(result.confirmed_events.class=="voltage_sag" && result.confirmed_events.confirmation_time>=unitSchedule.events.start_s);
 fprintf('STREAMING_SCIENTIFIC_TESTS_PASS events=%d samples=%d\n',height(truth),numel(x));
 end
 function p=prediction(start,c,confidence)

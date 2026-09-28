@@ -1,5 +1,7 @@
-function result=processStream(schedule,model,settings,cfg)
+function result=processStream(schedule,model,settings,cfg,stopAtConfirmed)
 %PROCESSSTREAM Arrived trailing windows -> calibrated model -> persistent state; no truth state input.
+if nargin<5,stopAtConfirmed=false;end
+assert(islogical(stopAtConfirmed) && isscalar(stopAtConfirmed),'eba:StreamStop','The confirmation stop control must be logical.');
 N=model.window_samples;hop=model.hop_samples;
 assert(N>=4 && hop>=1 && hop<=N && N==fix(N) && hop==fix(hop),'eba:StreamWindow','Invalid window/hop.');
 settings.sequence_id=schedule.sequence_id;settings.classes=cfg.classes;settings.confidence_calibrated=model.calibrated;
@@ -24,18 +26,21 @@ for w=1:n
         if isempty(completed),completed=transition.completed_event;else,completed(end+1)=transition.completed_event;end
     end %#ok<AGROW>
     windows(w,:)={pred.window_start_s,pred.window_end_s,pred.decision_time_s,label,confidence,feature_times(w),class_times(w),state.phase};
+    if stopAtConfirmed && ~isempty(event),break;end
 end
-truth=schedule.events;estimated=table('Size',[0 5],'VariableTypes',{'string','double','double','double','double'}, ...
-    'VariableNames',{'sequence_id','class_id','estimated_start_s','estimated_end_s','confirmation_time_s'});
-for i=1:numel(completed)
-    e=completed(i);estimated(end+1,:)={e.sequence_id,e.class_id,e.estimated_start_s,e.estimated_end_s,e.confirmation_time_s}; %#ok<AGROW>
-end
-[metrics,matched,clusters]=eba.eventMetrics(truth,estimated,schedule.normal_exposure_s,cfg);
+windows=windows(1:w,:);phases=phases(1:w);feature_times=feature_times(1:w);class_times=class_times(1:w);total_times=total_times(1:w);
+observedUntil=windows.window_end_s(end);truth=schedule.events(schedule.events.start_s<observedUntil,:);
+estimated=eba.eventEstimates(events,completed,observedUntil);
+normalExposure=observedUntil-sum(max(0,min(truth.end_s,observedUntil)-truth.start_s));
+exposure=table(schedule.sequence_id,normalExposure,'VariableNames',{'sequence_id','normal_exposure_s'});
+if numel(schedule.family_ids)==1,exposure.family_id=schedule.family_ids;end
+[metrics,matched,clusters]=eba.eventMetrics(truth,estimated,exposure,cfg);
 result=struct('sequence_id',schedule.sequence_id,'split',schedule.split,'window_predictions',windows,'confirmed_events',events, ...
     'completed_events',completed,'truth',truth,'estimated_events',estimated,'metrics',metrics,'matched',matched, ...
     'clusters',clusters,'final_state',state,'phases',phases,'window_samples',N,'hop_samples',hop, ...
     'feature_median_s',median(feature_times),'total_p95_s',quantile(total_times,.95),'total_inference_times_s',total_times, ...
     'streaming_real_time_factor_p95',quantile(total_times,.95)/(hop/cfg.Fs), ...
     'confirmation_scope','sample availability timestamp; compute time reported separately; no wall-clock pacing', ...
+    'observed_until_s',observedUntil,'scheduled_truth',schedule.events,'stopped_at_confirmation',stopAtConfirmed && state.phase=="CONFIRMED", ...
     'censored_confirmations',numel(events)-numel(completed));
 end

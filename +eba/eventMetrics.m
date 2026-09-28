@@ -3,13 +3,28 @@ function [report,matched,clusters] = eventMetrics(truth,estimated,normal_exposur
 assert(istable(truth) && all(ismember({'sequence_id','family_id','class_id','start_s','end_s'},truth.Properties.VariableNames)), ...
     'eba:EventTruth','Ground truth must contain event identities and complete intervals.');
 assert(istable(estimated) && all(ismember({'sequence_id','class_id','estimated_start_s','estimated_end_s','confirmation_time_s'},estimated.Properties.VariableNames)), ...
-    'eba:EventEstimate','Estimated intervals must be complete; censored confirmations cannot supply end metrics.');
+    'eba:EventEstimate','Estimates require interval starts, confirmations and explicit finite observation bounds when right censored.');
 assert(all(isfinite(truth.start_s) & isfinite(truth.end_s) & truth.start_s>=0 & truth.end_s>truth.start_s), ...
     'eba:EventBoundary','Truth intervals are invalid.');
-assert(all(isfinite(estimated.estimated_start_s) & isfinite(estimated.estimated_end_s) & ...
-    estimated.estimated_start_s>=0 & estimated.estimated_end_s>estimated.estimated_start_s & ...
-    isfinite(estimated.confirmation_time_s) & estimated.confirmation_time_s>=estimated.estimated_start_s), ...
-    'eba:EventBoundary','Censored or invalid estimated intervals cannot supply full event metrics.');
+closed=isfinite(estimated.estimated_end_s);
+assert(all(closed | isnan(estimated.estimated_end_s)),'eba:EventBoundary','Invalid estimated end.');
+observedEnd=estimated.estimated_end_s;
+if any(~closed)
+    assert(ismember('observed_until_s',estimated.Properties.VariableNames),'eba:EventBoundary','Censored estimates need the actual observation boundary.');
+    observedEnd(~closed)=estimated.observed_until_s(~closed);
+end
+assert(all(isfinite(estimated.estimated_start_s) & isfinite(observedEnd) & ...
+    estimated.estimated_start_s>=0 & observedEnd>estimated.estimated_start_s & ...
+    isfinite(estimated.confirmation_time_s) & estimated.confirmation_time_s>=estimated.estimated_start_s & ...
+    estimated.confirmation_time_s<=observedEnd), ...
+    'eba:EventBoundary','Invalid estimated interval or confirmation beyond observation.');
+supportEnd=min(observedEnd,estimated.confirmation_time_s);
+if ismember('confirmation_support_end_s',estimated.Properties.VariableNames)
+    supportEnd=estimated.confirmation_support_end_s;
+end
+assert(all(isfinite(supportEnd) & supportEnd>estimated.estimated_start_s & ...
+    supportEnd<=estimated.confirmation_time_s & supportEnd<=observedEnd), ...
+    'eba:EventBoundary','Confirmed support must precede the decision and observation boundary.');
 assert(isnumeric(truth.class_id) && isnumeric(estimated.class_id) && ...
     all(isfinite(truth.class_id) & truth.class_id==fix(truth.class_id) & truth.class_id>=2 & truth.class_id<=numel(cfg.classes)) && ...
     all(isfinite(estimated.class_id) & estimated.class_id==fix(estimated.class_id) & estimated.class_id>=2 & estimated.class_id<=numel(cfg.classes)), ...
@@ -41,14 +56,14 @@ else
     assert(numel(exposure)==numel(seq),'eba:EventExposure','Exposure vector must match sorted sequence identities; a multi-sequence total is insufficient.');
 end
 assert(~isempty(seq) && all(isfinite(exposure) & exposure>=0),'eba:EventExposure','Normal exposure must be finite and nonnegative.');
-threshold=.1;if isfield(cfg,'event_iou_threshold'),threshold=cfg.event_iou_threshold;end
-assert(isscalar(threshold) && threshold>0 && threshold<=1,'eba:EventMatch','Invalid IoU matching threshold.');
-matched=table('Size',[0 9],'VariableTypes',{'string','string','double','double','double','double','double','double','double'}, ...
-    'VariableNames',{'sequence_id','family_id','truth_row','estimated_row','class_id','iou','latency_s','start_error_s','end_error_s'});
+threshold=0;if isfield(cfg,'event_iou_threshold'),threshold=cfg.event_iou_threshold;end
+assert(isscalar(threshold) && threshold>=0 && threshold<=1,'eba:EventMatch','Invalid IoU matching threshold.');
+matched=table('Size',[0 11],'VariableTypes',{'string','string','double','double','double','double','double','double','double','double','logical'}, ...
+    'VariableNames',{'sequence_id','family_id','truth_row','estimated_row','class_id','iou','latency_s','start_error_s','end_error_s','observed_iou','interval_complete'});
 clusters=table(seq,zeros(numel(seq),1),zeros(numel(seq),1),zeros(numel(seq),1),exposure, ...
-    zeros(numel(seq),1),zeros(numel(seq),1),zeros(numel(seq),1),zeros(numel(seq),1), ...
+    zeros(numel(seq),1),zeros(numel(seq),1),zeros(numel(seq),1),zeros(numel(seq),1),zeros(numel(seq),1), ...
     'VariableNames',{'sequence_id','true_positives','false_positives','false_negatives','normal_exposure_s', ...
-    'iou_sum','latency_sum_s','start_error_sum_s','end_error_sum_s'});
+    'iou_sum','latency_sum_s','start_error_sum_s','end_error_sum_s','completed_matches'});
 for s=1:numel(seq)
     gt=find(truthSequence==seq(s));ed=find(estimatedSequence==seq(s));pairs=zeros(0,2);iou=zeros(numel(gt),numel(ed));
     if ~isempty(gt) && ~isempty(ed)
@@ -56,22 +71,28 @@ for s=1:numel(seq)
             for j=1:numel(ed)
                 % An alarm preceding the physical onset remains a false alarm, even if its eventual interval overlaps.
                 if truth.class_id(gt(i))~=estimated.class_id(ed(j)) || estimated.confirmation_time_s(ed(j))<truth.start_s(gt(i)),continue;end
-                intersection=max(0,min(truth.end_s(gt(i)),estimated.estimated_end_s(ed(j)))-max(truth.start_s(gt(i)),estimated.estimated_start_s(ed(j))));
-                union=max(truth.end_s(gt(i)),estimated.estimated_end_s(ed(j)))-min(truth.start_s(gt(i)),estimated.estimated_start_s(ed(j)));
+                % Detection requires actual confirming evidence to intersect the physical event.
+                if min(truth.end_s(gt(i)),supportEnd(ed(j)))<=max(truth.start_s(gt(i)),estimated.estimated_start_s(ed(j))),continue;end
+                truthObservedEnd=truth.end_s(gt(i));
+                if ~closed(ed(j)),truthObservedEnd=min(truthObservedEnd,observedEnd(ed(j)));end
+                intersection=max(0,min(truthObservedEnd,observedEnd(ed(j)))-max(truth.start_s(gt(i)),estimated.estimated_start_s(ed(j))));
+                union=max(truthObservedEnd,observedEnd(ed(j)))-min(truth.start_s(gt(i)),estimated.estimated_start_s(ed(j)));
                 iou(i,j)=intersection/union;
             end
         end
-        cost=-iou;cost(iou<threshold)=1e6;pairs=matchpairs(cost,0,'min');
+        cost=-iou;cost(iou<=0 | iou<threshold)=1e6;pairs=matchpairs(cost,0,'min');
     end
     for p=1:size(pairs,1)
         i=gt(pairs(p,1));j=ed(pairs(p,2));latency=estimated.confirmation_time_s(j)-truth.start_s(i);
-        matched(end+1,:)={seq(s),family(i),i,j,truth.class_id(i),iou(pairs(p,1),pairs(p,2)), ...
-            latency,abs(estimated.estimated_start_s(j)-truth.start_s(i)),abs(estimated.estimated_end_s(j)-truth.end_s(i))}; %#ok<AGROW>
+        overlap=iou(pairs(p,1),pairs(p,2));completeIoU=NaN;endError=NaN;
+        if closed(j),completeIoU=overlap;endError=abs(estimated.estimated_end_s(j)-truth.end_s(i));end
+        matched(end+1,:)={seq(s),family(i),i,j,truth.class_id(i),completeIoU, ...
+            latency,abs(estimated.estimated_start_s(j)-truth.start_s(i)),endError,overlap,closed(j)}; %#ok<AGROW>
     end
     rows=matched.sequence_id==seq(s);count=sum(rows);clusters.true_positives(s)=count;
     clusters.false_positives(s)=numel(ed)-count;clusters.false_negatives(s)=numel(gt)-count;
-    clusters.iou_sum(s)=sum(matched.iou(rows));clusters.latency_sum_s(s)=sum(matched.latency_s(rows));
-    clusters.start_error_sum_s(s)=sum(matched.start_error_s(rows));clusters.end_error_sum_s(s)=sum(matched.end_error_s(rows));
+    clusters.iou_sum(s)=sum(matched.iou(rows),'omitnan');clusters.latency_sum_s(s)=sum(matched.latency_s(rows));
+    clusters.start_error_sum_s(s)=sum(matched.start_error_s(rows));clusters.end_error_sum_s(s)=sum(matched.end_error_s(rows),'omitnan');clusters.completed_matches(s)=sum(matched.interval_complete(rows));
 end
 % Merge sequence dependencies transitively: noisy derivatives share a family, and events in one sequence share a baseline.
 groups=(1:numel(seq))';
@@ -79,15 +100,16 @@ for f=unique(linkFamily).'
     [ok,index]=ismember(linkSequence(linkFamily==f),seq);assert(all(ok),'eba:EventIdentity','Missing linked sequence.');
     ids=unique(groups(index));for j=2:numel(ids),groups(groups==ids(j))=ids(1);end
 end
-[~,~,group]=unique(groups);nGroups=max(group);sufficient=zeros(nGroups,8);
-for g=1:nGroups,sufficient(g,:)=sum(clusters{group==g,2:9},1);end
+[~,~,group]=unique(groups);nGroups=max(group);sufficient=zeros(nGroups,9);
+for g=1:nGroups,sufficient(g,:)=sum(clusters{group==g,2:10},1);end
 values=totals(sum(sufficient,1));names=["precision","recall","f1","missed_event_rate", ...
     "false_alarms_per_minute","mean_iou","mean_latency_s","mean_absolute_start_error_s","mean_absolute_end_error_s"];
 report=struct('n_true_events',height(truth),'n_estimated_events',height(estimated),'n_matched_events',height(matched), ...
-    'n_sequences',numel(seq),'n_independent_sequences',nGroups,'n_independent_families',numel(unique(linkFamily)), ...
+    'n_censored_estimates',sum(~closed),'n_completed_matches',sum(matched.interval_complete),'n_sequences',numel(seq),'n_independent_sequences',nGroups,'n_independent_families',numel(unique(linkFamily)), ...
     'n_independent_clusters',nGroups,'normal_exposure_s',sum(exposure),'false_alarms',sum(clusters.false_positives), ...
-    'matching','one-to-one maximum total IoU within sequence and exact class; confirmation at or after true onset', ...
-    'iou_threshold',threshold,'latency_scope','conditional on matched completed events; misses reported separately');
+    'false_alarm_definition','all unmatched confirmations including class errors, normalized by known normal exposure minutes', ...
+    'matching','one-to-one maximum observed interval IoU among exact-class alarms with positive confirming-evidence overlap; confirmation at or after true onset; right-censored matching truncates both intervals at the actual observation boundary; no completed end is inferred', ...
+    'iou_threshold',threshold,'latency_scope','conditional on matched confirmed events; complete IoU and end error exclude right-censored estimates; misses and censoring counts reported separately');
 for q=1:numel(names),report.(names(q))=values(q);end
 B=cfg.bootstrap_replicates;if isfield(cfg,'temporal_bootstrap_replicates'),B=cfg.temporal_bootstrap_replicates;end
 assert(isscalar(B) && B>=0 && B==fix(B),'eba:EventBootstrap','Invalid bootstrap count.');
@@ -107,6 +129,7 @@ end
 function v=totals(s)
 tp=s(1);fp=s(2);fn=s(3);exposure=s(4);precision=tp/max(tp+fp,1);recall=tp/max(tp+fn,1);
 rate=NaN;if exposure>0,rate=60*fp/exposure;elseif fp>0,rate=Inf;end
-means=NaN(1,4);if tp>0,means=s(5:8)/tp;end
+means=NaN(1,4);if tp>0,means(2:3)=s(6:7)/tp;end
+if s(9)>0,means([1 4])=s([5 8])/s(9);end
 v=[precision,recall,2*precision*recall/max(precision+recall,eps),fn/max(tp+fn,1),rate,means];
 end

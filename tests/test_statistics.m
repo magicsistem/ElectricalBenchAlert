@@ -112,6 +112,16 @@ rf_cfg=cfg; rf_cfg.comparison_family="rf_sensitivity";
 assert(height(rf_pairs)==10 && ~any(rf_pairs.method_a=="extra" | rf_pairs.method_b=="extra"));
 assert(all(rf_pairs.comparison_family=="rf_sensitivity") && rf_d.comparison_family=="rf_sensitivity");
 
+% Explicit secondary comparison families may reference later methods, with one Holm correction.
+custom=cfg;custom.planned_comparisons=[1 6;3 6];custom.comparison_family="planned_secondary";
+[~,customPairs]=eba.familyStats(P,repmat(p,1,6),["a","b","c","d","e","f"],custom);
+assert(height(customPairs)==2 && all(customPairs.method_b=="f") && customPairs.method_a(2)=="c");
+assert(all(customPairs.p_holm==1 & customPairs.comparison_family=="planned_secondary"));
+for invalid={[1 1],[1 7],[1 2;2 1],[1 2.5]}
+    bad=custom;bad.planned_comparisons=invalid{1};
+    fails(@() eba.familyStats(P,repmat(p,1,6),["a","b","c","d","e","f"],bad),'eba:StatisticsComparisons');
+end
+
 % Missing observed classes remain in the fixed confusion matrix and Macro-F1.
 only=metadata(ones(4,1),Inf,0);
 [one,~,~,od]=eba.familyStats(only,ones(4,1),"single-class",cfg);

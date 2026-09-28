@@ -98,6 +98,13 @@ per_class.recall_ci_low=class_ci(1,:)'; per_class.recall_ci_high=class_ci(2,:)';
 
 % Primary family: ten comparisons among the first five DSP/SVM methods.
 planned=zeros(0,2); if M>=2,planned=nchoosek(1:min(M,5),2);end
+if isfield(cfg,'planned_comparisons')
+    planned=double(cfg.planned_comparisons);
+    assert(isnumeric(cfg.planned_comparisons) && isreal(planned) && size(planned,2)==2 && ...
+        all(isfinite(planned) & planned==fix(planned) & planned>=1 & planned<=M,'all') && ...
+        all(planned(:,1)~=planned(:,2)) && size(unique(sort(planned,2),'rows'),1)==size(planned,1), ...
+        'eba:StatisticsComparisons','Planned comparisons require distinct unique declared method pairs.');
+end
 J=size(planned,1);
 comparison_family="dsp_svm_primary_first_five";
 if M<5,comparison_family="development_first_methods";end

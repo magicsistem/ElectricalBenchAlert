@@ -12,8 +12,19 @@ m=struct('experiment_id',string(id),'timestamp_utc',string(datetime('now','TimeZ
     'split_seed',cfg.split_seed,'model_seed',cfg.model_seed,'stream_seed',cfg.stream_seed, ...
     'feature_schema_version',cfg.feature_schema_version, ...
     'config_hash',eba.hash(fullfile(cfg.root,'config','research_v2.json'),'file'),'extra',extra);
-if isfield(extra,'dataset_hash'),m.dataset_hash=extra.dataset_hash;end
-if isfield(extra,'split_hash'),m.split_hash=extra.split_hash;end
+% Dataset identity always denotes the complete declared population; actual inputs are separate.
+F=eba.families(cfg.families_per_cell,cfg);
+m.dataset_hash=eba.hash(jsonencode(table2struct(F)));
+m.split_hash=eba.hash(jsonencode(table2struct(F(:,{'family_id','split'}))));
+if isfield(extra,'dataset_hash'),m.input_family_subset_sha256=extra.dataset_hash;end
+if isfield(extra,'split_hash'),m.input_subset_split_sha256=extra.split_hash;end
+m.method=string(id);if isfield(extra,'method'),m.method=extra.method;elseif isfield(extra,'methods'),m.method=extra.methods;end
+m.parameters=jsondecode(fileread(fullfile(cfg.root,'config','research_v2.json')));
+if isfield(extra,'parameters'),m.parameters=extra.parameters;end
+m.classifier="not_applicable";
+if isfield(extra,'classifier'),m.classifier=extra.classifier;elseif isfield(extra,'classifier_tracks'),m.classifier=extra.classifier_tracks;end
+m.hyperparameters=struct();if isfield(extra,'hyperparameters'),m.hyperparameters=extra.hyperparameters;end
+m.hash_scope='dataset_hash: full canonical parameter families; split_hash: full family_id/split mapping; input subsets recorded separately';
 items=struct('path',{},'sha256',{});
 for k=1:numel(artifacts)
     path=char(artifacts(k));assert(isfile(path),'eba:ManifestArtifact','Missing artifact.');
@@ -21,5 +32,15 @@ for k=1:numel(artifacts)
     items(k).path=erase(path,[cfg.root filesep]);items(k).sha256=eba.hash(path,'file');
 end
 m.artifacts=items;
-eba.json(fullfile(cfg.output,'manifests',string(id)+'.json'),m);
+latest=fullfile(cfg.output,'manifests',string(id)+'.json');history=fullfile(cfg.output,'manifests','history');
+if ~isfolder(history),mkdir(history);end
+% Preserve the actual previous bytes/provenance before updating the stable latest alias.
+if isfile(latest)
+    oldHash=eba.hash(latest,'file');oldPath=fullfile(history,string(id)+"_previous_"+oldHash+".json");
+    if ~isfile(oldPath),copyfile(latest,oldPath);else,assert(strcmp(eba.hash(oldPath,'file'),oldHash),'eba:ManifestMutation','Prior manifest history changed.');end
+end
+stamp=string(datetime('now','TimeZone','UTC','Format',"yyyyMMdd'T'HHmmssSSS"));
+recordHash=eba.hash(jsonencode(m));recordPath=fullfile(history,string(id)+"_"+stamp+"_"+recordHash+".json");
+assert(~isfile(recordPath),'eba:ManifestMutation','Immutable manifest record already exists.');
+eba.json(recordPath,m);eba.json(latest,m);
 end
