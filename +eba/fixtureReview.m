@@ -4,6 +4,7 @@ function review = fixtureReview(cfg)
 if nargin<1, cfg=eba.config(); end
 root=fullfile(cfg.root,'fixtures','dataset_fixture');
 T=readtable(fullfile(root,'metadata.csv'),'TextType','string');
+identity=jsondecode(fileread(fullfile(cfg.root,'data','manifests','original_fixtures.json')));
 assert(height(T)==9,'eba:Fixtures','Expected the nine immutable original fixtures.');
 items=cell(height(T),1);
 for i=1:height(T)
@@ -11,6 +12,9 @@ for i=1:height(T)
     assert(~contains(file,'..') && startsWith(file,'signals/') && endsWith(file,'.mat'), ...
         'eba:FixturePath','Unsafe fixture path.');
     path=fullfile(root,file); originalHash=eba.hash(path,'file'); data=load(path);
+    registered=find(strcmp({identity.files.path},['fixtures/dataset_fixture/' file]));
+    assert(numel(registered)==1 && strcmp(originalHash,identity.files(registered).sha256), ...
+        'eba:FixtureIdentity','Original scientific reference fixture does not match its published identity.');
     assert(isfield(data,'samples') && isvector(data.samples) && all(isfinite(data.samples(:))), ...
         'eba:Fixtures','Fixture samples are missing or nonfinite.');
     x=double(data.samples(:)); Fs=T.Fs(i); t=(0:numel(x)-1)'/Fs; p=jsondecode(T.parameters_json(i));
