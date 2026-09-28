@@ -1,0 +1,68 @@
+function [x,truth,meta]=continuousSignal(schedule,indices,cfg)
+%CONTINUOUSSIGNAL Absolute-phase samples; one sequence-wide AWGN normalization.
+assert(isstruct(schedule) && isscalar(schedule) && all(isfield(schedule, ...
+    {'sequence_id','split','access_mode','Fs','n_samples','baseline','events','snr_db','noise_seed'})), ...
+    'eba:StreamSchedule','A complete continuous schedule is required.');
+assert(schedule.Fs==cfg.Fs && isnumeric(indices) && isreal(indices) && ...
+    all(isfinite(indices(:)) & indices(:)>=0 & indices(:)==fix(indices(:)) & indices(:)<schedule.n_samples), ...
+    'eba:StreamIndices','Samples must be zero-based integers inside the sequence.');
+assert(schedule.n_samples>=2 && schedule.n_samples==fix(schedule.n_samples), ...
+    'eba:StreamSchedule','Sequence sample count must be an integer of at least two.');
+if string(schedule.access_mode)=="development"
+    assert(string(schedule.split)~="test",'eba:TestFirewall','Development samples deny test schedules.');
+elseif string(schedule.access_mode)=="final"
+    eba.requireFrozen(cfg);
+else
+    error('eba:StreamMode','Unknown schedule access mode.');
+end
+idx=double(indices(:)); clean=eba.waveform(schedule.baseline,idx,cfg); x=clean;
+truth=schedule.events;
+assert(istable(truth) && all(truth.start_sample>=0 & truth.end_sample>truth.start_sample & truth.end_sample<=schedule.n_samples) && ...
+    all(truth.start_sample==fix(truth.start_sample) & truth.end_sample==fix(truth.end_sample)) && ...
+    all(truth.start_sample(2:end)>=truth.end_sample(1:end-1)), ...
+    'eba:StreamSupport','Events must have ordered, nonoverlapping integer support.');
+for i=1:height(truth)
+    active=idx>=truth.start_sample(i) & idx<truth.end_sample(i);
+    if ~any(active),continue;end
+    p=jsondecode(truth.parameters_json(i));
+    assert(p.start_sample==truth.start_sample(i) && p.end_sample==truth.end_sample(i) && ...
+        p.frequency_hz==schedule.baseline.frequency_hz && p.base_rms_pu==schedule.baseline.base_rms_pu && ...
+        p.phase_rad==schedule.baseline.phase_rad,'eba:StreamParameters','Event support or common baseline was altered.');
+    delta=eba.waveform(p,idx(active),cfg)-clean(active);
+    if p.stream_taper_samples>0
+        distance=min(idx(active)-p.start_sample,p.end_sample-idx(active));
+        envelope=.5-.5*cos(pi*min(distance/p.stream_taper_samples,1)); delta=delta.*envelope;
+    end
+    x(active)=x(active)+delta;
+end
+assert(isnumeric(schedule.snr_db) && isreal(schedule.snr_db) && isscalar(schedule.snr_db) && ...
+    (isfinite(schedule.snr_db) || schedule.snr_db==Inf),'eba:SNR','Invalid sequence SNR.');
+nominal_power=schedule.baseline.base_rms_pu^2; measured=Inf;
+if isfinite(schedule.snr_db)
+    unit=sequenceNoise(schedule.n_samples,schedule.noise_seed);
+    scale=sqrt(nominal_power)*10^(-schedule.snr_db/20);
+    assert(isfinite(scale) && scale>0,'eba:StreamNoise','Noise scale is not representable.');
+    x=x+unit(idx+1)*scale; measured=10*log10(nominal_power/(scale^2));
+end
+assert(all(isfinite(x)),'eba:NonFiniteSignal','Continuous samples must be finite.');
+meta=struct('sequence_id',string(schedule.sequence_id),'split',string(schedule.split), ...
+    'Fs_hz',double(cfg.Fs),'sequence_samples',schedule.n_samples,'returned_samples',numel(idx), ...
+    'requested_snr_db',schedule.snr_db,'measured_nominal_snr_db',measured, ...
+    'noise_seed',schedule.noise_seed,'noise_reference',"nominal_sequence_baseline_rms_power", ...
+    'reference_power_pu2',nominal_power,'access_mode',string(schedule.access_mode), ...
+    'phase_continuous',true,'noise_sample_addressable',true);
+end
+
+function unit=sequenceNoise(count,seed)
+persistent cached_key cached_unit
+assert(isnumeric(seed) && isreal(seed) && isscalar(seed) && isfinite(seed) && seed>=0 && seed<2^32 && seed==fix(seed), ...
+    'eba:StreamSeed','Noise seed must be an unsigned 32-bit integer.');
+key=[double(count) double(seed)];
+if isempty(cached_key) || ~isequal(cached_key,key)
+    % ponytail: one full sequence vector; counter-based Gaussian sampling if sequences exceed RAM.
+    r=RandStream('mt19937ar','Seed',double(seed)); z=randn(r,count,1); z=z-mean(z);
+    energy=mean(z.^2); assert(isfinite(energy) && energy>0,'eba:StreamNoise','Invalid Gaussian realization.');
+    cached_unit=z/sqrt(energy); cached_key=key;
+end
+unit=cached_unit;
+end
