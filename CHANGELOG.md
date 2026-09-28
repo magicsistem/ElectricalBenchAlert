@@ -2,11 +2,12 @@
 
 ## Unreleased — scientific reconstruction
 
-- Move working Markdown documentation to ignored local_docs/; keep only README.md and CHANGELOG.md in public Git trees.
-- Rewrite the two baseline commits and v0.1.0 tag to remove other Markdown from published history; preserve the previous history privately.
 - Remove the active legacy implementation and obsolete drivers; retain nine original scientific MAT reference fixtures.
 - Add MATLAB family/noise generation, five controlled representations, common features, ECOC SVM/Random Forest utilities, paired family statistics and integration controls.
-- Final dataset selection, authoritative benchmarks, raw baselines and confirmed-event validation remain pending.
+- Execute development representation selection and ten SVM/Random Forest fits in local MATLAB.
+- Validate continuous control signals through confirmation, explicit censoring, temporal matching and typed freeze mutation checks across nine test suites.
+- Add native model compaction and paired development sensitivity drivers; their experimental executions remain separate from final acceptance.
+- Final dataset size selection, full raw baselines and independent confirmed-event evaluation remain pending.
 
 ## 0.1.0 — Audited legacy baseline
 

@@ -10,10 +10,10 @@ MATLAB R2026b, Signal Processing Toolbox, Wavelet Toolbox, Statistics and Machin
 git clone https://github.com/magicsistem/ElectricalBenchAlert.git
 cd ElectricalBenchAlert
 matlab -batch "disp(version); ver"
-matlab -batch "startup; test_signals; test_transforms; test_classifiers; test_statistics; test_pipeline"
+matlab -batch "startup; run_all_tests"
 ```
 
-These five scientific test suites have been executed successfully. They cover deterministic waveforms, exact noise power, grouped splits, five transform controls, controlled classifiers, paired family statistics and pipeline/firewall checks. They do not yet establish final classifier performance or continuous confirmed-event performance. CNN/TCN and stream verification remain in progress.
+Nine MATLAB test suites have passed locally. They cover deterministic waveforms, exact noise power, grouped splits, five transform controls, controlled classifiers, paired family statistics, one-epoch CNN/TCN structural training, runtime controls, continuous processing through confirmation and typed freeze/mutation checks. The integration classifier is a control fixture. Final model selection and independent test evaluation remain pending.
 
 ## Scientific scope
 
@@ -35,4 +35,4 @@ matlab -batch "startup; run_development('classifiers')"
 matlab -batch "startup; run_development('learning')"
 ```
 
-These experiment drivers are under development; authoritative benchmark results and the final reproduction commands will be added after execution and review. No MQTT, ESP32, Wokwi, Flutter, transport or application persistence is implemented.
+Development representation selection and ten DSP/classifier fits have executed in MATLAB. Learning curves, the full raw baselines and final streaming evaluation remain pending; development results do not establish final performance. No MQTT, ESP32, Wokwi, Flutter, transport or application persistence is implemented.
