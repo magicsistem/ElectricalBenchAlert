@@ -1,0 +1,13 @@
+cff-version: 1.2.0
+message: Please cite this software when using its scientific code or generated results.
+type: software
+title: ElectricalBenchAlert
+authors:
+  - name: ElectricalBenchAlert contributors
+repository-code: https://github.com/magicsistem/ElectricalBenchAlert
+abstract: Reproducible MATLAB research comparing electrical disturbance representations and detecting confirmed synthetic events under continuous window processing.
+keywords:
+  - power quality
+  - MATLAB
+  - signal processing
+  - reproducibility
