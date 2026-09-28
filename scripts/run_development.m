@@ -1,6 +1,6 @@
 function report = run_development(stage)
 %RUN_DEVELOPMENT Prospective family-only representation, size and classifier decisions.
-% Test waveform predictions are never requested here. See BENCHMARK_PROTOCOL.md.
+% Test waveform predictions are never requested; classifiers share one validation-selected configuration.
 if nargin<1,stage="all";end
 stage=string(stage);assert(any(stage==["all","representations","learning","classifiers"]));
 if stage=="all"
@@ -111,19 +111,40 @@ if stage=="all" || stage=="classifiers"
     [small,smallCal]=eba.subsetFamilies(F,6,3);[~,cal]=eba.subsetFamilies(F,max(cfg.learning_train_families_per_cell),3);
     models=cell(5,2); predictions=cell(5,2); searches=cell(5,2); validationP=[];
     sources={'+eba/fit.m','+eba/predict.m','+eba/calibrate.m','+eba/selectClassifier.m', ...
-        '+eba/features.m','+eba/record.m','+eba/waveform.m','+eba/noise.m','scripts/run_development.m'};
+        '+eba/features.m','+eba/record.m','+eba/recordId.m','+eba/featureCacheKey.m', ...
+        '+eba/waveform.m','+eba/noise.m','+eba/sharedHyperparameters.m','scripts/run_development.m'};
     digests=cellfun(@(p) eba.hash(fullfile(cfg.root,p),'file'),sources,'UniformOutput',false);
     runSignature=eba.hash(jsonencode(struct('config',S.config_hash,'families',eba.hash(jsonencode(table2struct(F))), ...
         'parameters',{S.selected},'source_sha256',{digests})));
+    searchFolder=fullfile(cfg.output,'classifier_search');if ~isfolder(searchFolder),mkdir(searchFolder);end
+    kinds=["SVM","RF"];
     for m=1:5
         [tuneX,tuneP]=eba.extract(small,methods(m),S.selected{m},cfg,'development',[Inf 20 5],1);
+        for k=1:2
+            signature=eba.hash(jsonencode(struct('run',runSignature,'method',methods(m),'classifier',kinds(k))));
+            path=fullfile(searchFolder,signature+".mat");
+            if isfile(path)
+                saved=load(path,'search','search_signature');assert(strcmp(saved.search_signature,signature), ...
+                    'eba:DevelopmentMutation','Classifier search checkpoint identity changed.');searches{m,k}=saved.search;
+                fprintf('CLASSIFIER_SEARCH_REUSED %s %s\n',methods(m),kinds(k));
+            else
+                [~,search]=eba.selectClassifier(tuneX,tuneP,cfg,kinds(k),smallCal);searches{m,k}=search;search_signature=signature;
+                save(path,'search','search_signature','-v7');
+            end
+        end
+    end
+    shared=cell(1,2);
+    for k=1:2
+        [shared{k},comparison]=eba.sharedHyperparameters(searches(:,k),methods);
+        writetable(comparison,fullfile(cfg.output,"shared_hyperparameters_"+lower(kinds(k))+".csv"));
+        fprintf('SHARED_CLASSIFIER_SELECTED %s %s\n',kinds(k),jsonencode(shared{k}));
+    end
+    for m=1:5
         [X,P,info]=eba.extract(F,methods(m),S.selected{m},cfg,'development');
         train=P.split=="train" & ~ismember(P.family_id,cal);calmask=P.split=="train" & ismember(P.family_id,cal);val=P.split=="validation";
-        if exist('eba.featureReview','file')
-            [review,redundancy]=eba.featureReview(X(train,:),P(train,:),info.feature_names,cfg);
-            eba.json(fullfile(cfg.output,"feature_review_"+lower(methods(m))+".json"),review);
-            writetable(redundancy,fullfile(cfg.output,"feature_redundancy_"+lower(methods(m))+".csv"));
-        end
+        [review,redundancy]=eba.featureReview(X(train,:),P(train,:),info.feature_names,cfg);
+        eba.json(fullfile(cfg.output,"feature_review_"+lower(methods(m))+".json"),review);
+        writetable(redundancy,fullfile(cfg.output,"feature_redundancy_"+lower(methods(m))+".csv"));
         if isempty(validationP),validationP=P(val,:);else,assert(isequal(validationP,P(val,:)),'eba:PairedRecords','Representations received different records.');end
         for k=1:2
             kinds=["SVM","RF"];kind=kinds(k);
@@ -136,8 +157,7 @@ if stage=="all" || stage=="classifiers"
                     fprintf('CLASSIFIER_CHECKPOINT_REUSED %s %s\n',methods(m),kind);continue;
                 end
             end
-            [candidate,searches{m,k}]=eba.selectClassifier(tuneX,tuneP,cfg,kind,smallCal);
-            model=eba.fit(X(train,:),P.class_id(train),cfg,kind,candidate.hyperparameters);
+            model=eba.fit(X(train,:),P.class_id(train),cfg,kind,shared{k});
             model=eba.calibrate(model,X(calmask,:),P.class_id(calmask),P.family_id(calmask));
             pred=eba.predict(model,X(val,:)); predictions{m,k}=pred;
             model.method=methods(m);model.parameters=S.selected{m};model.training_family_ids=unique(P.family_id(train));
@@ -154,7 +174,9 @@ if stage=="all" || stage=="classifiers"
                 methods(m),kind,numel(model.training_family_ids),sum(val));
         end
     end
-    save(classifierFile,'models','predictions','searches','validationP','methods','-v7.3');
+    for k=1:2,for m=1:5,assert(isequal(models{m,k}.hyperparameters,shared{k}), ...
+        'eba:SharedClassifier','A representation received different classifier hyperparameters.');end;end
+    save(classifierFile,'models','predictions','searches','validationP','methods','shared','-v7.3');
     statCfg=cfg;statCfg.classes=cfg.classes(1:cfg.primary_class_count);
     for k=1:2
         kinds=["SVM","RF"];kind=kinds(k);statCfg.comparison_family="development_"+lower(kind);
@@ -165,7 +187,9 @@ if stage=="all" || stage=="classifiers"
         save(fullfile(cfg.output,"validation_"+lower(kind)+"_statistics.mat"),'summary','pairs','robustness','details','-v7.3');
     end
     eba.manifest('development_classifiers',cfg,struct('scope','train_validation_only','methods',methods, ...
-        'classifier_tracks',["SVM","RF"],'tuning_snrs',[Inf 20 5],'tuning_realizations',1,'final_fit_variants_per_family',19),{classifierFile});
+        'classifier_tracks',["SVM","RF"],'tuning_snrs',[Inf 20 5],'tuning_realizations',1,'final_fit_variants_per_family',19, ...
+        'hyperparameters',{shared},'hyperparameter_policy',cfg.classifier_hyperparameter_policy), ...
+        {classifierFile,fullfile(cfg.output,'shared_hyperparameters_svm.csv'),fullfile(cfg.output,'shared_hyperparameters_rf.csv')});
 end
 report=struct('stage',stage,'test_accessed',false,'output','results/v2');
 fprintf('DEVELOPMENT_STAGE_PASS stage=%s test_accessed=0\n',stage);

@@ -1,6 +1,6 @@
 function [v,names,bytes,detail] = features(x,Fs,method,params)
 %FEATURES Frozen-width, waveform-only DSP protocol (8 time + 16 summaries).
-% See docs/methodology/FEATURE_PROTOCOL.md and DSP_PROTOCOL.md.
+% Scientific scope and reproduction instructions are in the root README.
 if nargin<4, params=struct(); end
 validateattributes(x,{'single','double'},{'real','vector','finite','nonempty'});
 validateattributes(Fs,{'numeric'},{'real','scalar','finite','positive'});

@@ -1,6 +1,6 @@
 function test_raw()
 %TEST_RAW Real one-epoch training, causal-prefix and amplitude controls on CPU.
-cfg=eba.config(); F=eba.families(20,cfg);
+cfg=eba.config();cfg.families_per_cell=20;cfg.learning_train_families_per_cell=[3 6 9 14]; F=eba.families(20,cfg);
 F=F(F.class_id<=9 & F.split~="test" & F.severity_stratum==1 & F.duration_stratum==1,:);
 bad=F; bad.split(1)="test"; rejects(@() eba.rawTrain(bad,cfg,'CNN',11),'eba:TestFirewall');
 bad=F; bad.class_id(1)=12; rejects(@() eba.rawTrain(bad,cfg,'CNN',11),'eba:RawClasses');

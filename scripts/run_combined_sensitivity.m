@@ -3,7 +3,7 @@ function summary=run_combined_sensitivity()
 cfg=eba.config();F=eba.families(cfg.families_per_cell,cfg);F=F(F.split~="test",:);
 core=F(F.class_id<=cfg.primary_class_count,:);combined=F(F.class_id>cfg.primary_class_count,:);
 S=load(fullfile(cfg.output,'development_transform_selection.mat'),'selected','methods');
-D=load(fullfile(cfg.output,'development_classifiers.mat'),'models');[~,cal]=eba.subsetFamilies(F,14,3);
+D=load(fullfile(cfg.output,'development_classifiers.mat'),'models');[~,cal]=eba.subsetFamilies(F,max(cfg.learning_train_families_per_cell),cfg.families_per_cell/20*cfg.split_per_block.validation);
 models=cell(5,2);predictions=cell(5,2);validation=[];artifacts=strings(0,1);
 for m=1:5
     [Xcore,Pcore]=eba.extract(core,S.methods(m),S.selected{m},cfg,'development');

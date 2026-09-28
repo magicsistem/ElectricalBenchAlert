@@ -26,7 +26,7 @@
   "primary_class_count": 9,
   "severity_strata": 3,
   "duration_strata": 4,
-  "families_per_cell": 20,
+  "families_per_cell": 40,
   "split_per_block": {
     "train": 14,
     "validation": 3,
@@ -57,7 +57,9 @@
     3,
     6,
     9,
-    14
+    14,
+    21,
+    28
   ],
   "learning_max_f1_gain": 0.01,
   "learning_ci_half_width": 0.03,
@@ -130,5 +132,6 @@
     "truncate_sigma": 4
   },
   "feature_schema_version": "2.0.0",
-  "regulatory_monitoring_status": "not_implemented"
+  "regulatory_monitoring_status": "not_implemented",
+  "classifier_hyperparameter_policy": "one shared configuration per classifier track; maximum mean validation Macro F1 across five representations; grid order breaks exact ties"
 }

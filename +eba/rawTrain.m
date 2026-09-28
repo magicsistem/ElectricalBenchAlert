@@ -8,7 +8,8 @@ assert(numel(unique(string(F.family_id)))==height(F),'eba:FamilyLeakage','Raw fa
 K=cfg.primary_class_count;
 assert(K==9 && all(ismember(F.class_id,1:K)),'eba:RawClasses','This raw comparison requires the nine primary classes.');
 assert(isscalar(seed) && isfinite(seed) && seed>=0 && seed<2^32 && seed==fix(seed),'eba:RawSeed','Invalid model seed.');
-[S,calibrationIDs]=eba.subsetFamilies(F,max(cfg.learning_train_families_per_cell),3);
+validationCount=cfg.families_per_cell/20*cfg.split_per_block.validation;
+[S,calibrationIDs]=eba.subsetFamilies(F,max(cfg.learning_train_families_per_cell),validationCount);
 fitFamilies=S(S.split=="train" & ~ismember(S.family_id,calibrationIDs),:);
 calibrationFamilies=S(ismember(S.family_id,calibrationIDs),:);
 validationFamilies=S(S.split=="validation",:);

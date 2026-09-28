@@ -20,7 +20,7 @@ Nine MATLAB test suites have passed locally. They cover deterministic waveforms,
 - Track A: FFT, STFT, DWT, CWT and band-limited S-Transform, a common 24-feature schema and ECOC SVM; Random Forest sensitivity.
 - Track B: lightweight 1-D CNN and causal TCN on nominal p.u. waveforms, preserving absolute amplitude.
 - Independent unit: family_id; every noise/crop derivative stays in its family's split.
-- Proposed dataset: nine core classes plus three bounded composite classes, 240 families/class initially. Final size requires development learning curves and confidence intervals.
+- Proposed dataset: nine core classes plus three bounded composite classes, 240 families/class initially; the next provisional candidate has 480 families/class. Final size requires development learning curves and confidence intervals.
 - Final test predictions remain sealed until source, dataset/split, offline models, streaming windows and temporal settings are hash-bound.
 - Endpoint: a phase-continuous simulated signal producing NORMAL → SUSPECTED → CONFIRMED.
 
