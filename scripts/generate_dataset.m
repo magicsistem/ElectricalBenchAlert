@@ -1,10 +1,10 @@
 function manifest = generate_dataset(n_per_cell)
 %GENERATE_DATASET Metadata-only v2 development dataset; MATLAB lazy waveform authority.
-if nargin<1, n_per_cell=20; end
-cfg=eba.config(); T=eba.families(n_per_cell,cfg); balance=eba.validateFamilies(T,cfg);
+cfg=eba.config();if nargin<1,n_per_cell=cfg.families_per_cell;end
+T=eba.families(n_per_cell,cfg); balance=eba.validateFamilies(T,cfg);
 familyHash=eba.hash(jsonencode(table2struct(T)),'text');
 sourceFiles={'+eba/config.m','+eba/hash.m','+eba/json.m','+eba/families.m','+eba/waveform.m','+eba/noise.m','+eba/record.m', ...
-    '+eba/validateFamilies.m','+eba/fixtureReview.m','scripts/generate_dataset.m','config/research_v2.json'};
+    '+eba/validateFamilies.m','+eba/fixtureReview.m','+eba/recordId.m','scripts/generate_dataset.m','config/research_v2.json'};
 sourceHashes=cellfun(@(p) eba.hash(fullfile(cfg.root,p),'file'),sourceFiles,'UniformOutput',false);
 sourceIdentity=eba.hash(strjoin(sourceHashes,''),'text');
 folder=fullfile(cfg.output,sprintf('development_dataset_n%d_%s_%s',n_per_cell,familyHash(1:12),sourceIdentity(1:12)));
@@ -26,11 +26,11 @@ V=table('Size',[height(T)*nVariants 7],'VariableTypes',{'string','string','strin
 k=0;
 for i=1:height(T)
     p=jsondecode(T.parameters_json(i)); k=k+1;
-    V(k,:)={T.family_id(i)+"_clean",T.family_id(i),T.split(i),Inf,0, ...
+    V(k,:)={eba.recordId(T.family_id(i),Inf,0),T.family_id(i),T.split(i),Inf,0, ...
         1000000000+double(cfg.master_seed)+p.family_serial*16+1,T.family_seed(i)};
     for r=1:cfg.noise_realizations
         for snr=cfg.snr_db(:)'
-            k=k+1; id=T.family_id(i)+sprintf('_snr%+03d_r%d',snr,r);
+            k=k+1; id=eba.recordId(T.family_id(i),snr,r);
             V(k,:)={id,T.family_id(i),T.split(i),snr,r,1000000000+double(cfg.master_seed)+p.family_serial*16+r,T.family_seed(i)};
         end
     end

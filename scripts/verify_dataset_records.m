@@ -3,7 +3,7 @@ function report=verify_dataset_records()
 % Structural generation includes split-labelled records but computes no features/model responses.
 % This validates the generator/catalog; it cannot authorize opening the final classifier test.
 cfg=eba.config();F=eba.families(cfg.families_per_cell,cfg);nVariants=1+numel(cfg.snr_db)*cfg.noise_realizations;
-sources={'+eba/families.m','+eba/record.m','+eba/waveform.m','+eba/noise.m','+eba/hash.m','scripts/verify_dataset_records.m'};
+sources={'+eba/families.m','+eba/record.m','+eba/waveform.m','+eba/noise.m','+eba/hash.m','+eba/recordId.m','scripts/verify_dataset_records.m'};
 digests=cellfun(@(x) eba.hash(fullfile(cfg.root,x),'file'),sources,'UniformOutput',false);
 familyHash=eba.hash(jsonencode(table2struct(F)));sourceHash=eba.hash(strjoin(digests,''));
 folder=fullfile(cfg.output,"record_catalog_"+familyHash(1:12)+"_"+sourceHash(1:12));if ~isfolder(folder),mkdir(folder);end
@@ -20,7 +20,7 @@ for i=1:height(F)
             [signal,meta]=eba.record(F(i,:),snr,realization,cfg,'structural');k=k+1;
             assert(numel(signal)==cfg.Fs*cfg.clip_duration_s && all(isfinite(signal)), ...
                 'eba:DatasetWaveform','Invalid waveform size or finite range.');
-            id=F.family_id(i)+"_snr"+snr+"_r"+meta.noise_realization;
+            id=string(meta.record_id);
             V(k,:)={id,F.family_id(i),F.split(i),F.class_id(i),snr,meta.measured_snr_db,meta.noise_realization, ...
                 meta.noise_seed,F.family_seed(i),meta.reference_power_pu2,meta.waveform_sha256};
             if isfinite(snr),maximumDeviation=max(maximumDeviation,abs(meta.measured_snr_db-snr));end

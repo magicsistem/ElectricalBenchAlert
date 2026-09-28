@@ -7,6 +7,8 @@
 - Execute development representation selection and ten SVM/Random Forest fits in local MATLAB.
 - Validate continuous control signals through confirmation, explicit censoring, temporal matching and typed freeze mutation checks across nine test suites.
 - Add native model compaction and paired development sensitivity drivers; their experimental executions remain separate from final acceptance.
+- Verify canonical record identities, cache payload integrity, independent stream noise and onset alignment controls in MATLAB.
+- Execute initial learning curves; three representations reject the provisional dataset size.
 - Final dataset size selection, full raw baselines and independent confirmed-event evaluation remain pending.
 
 ## 0.1.0 — Audited legacy baseline

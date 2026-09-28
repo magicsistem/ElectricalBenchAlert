@@ -35,4 +35,4 @@ matlab -batch "startup; run_development('classifiers')"
 matlab -batch "startup; run_development('learning')"
 ```
 
-Development representation selection and ten DSP/classifier fits have executed in MATLAB. Learning curves, the full raw baselines and final streaming evaluation remain pending; development results do not establish final performance. No MQTT, ESP32, Wokwi, Flutter, transport or application persistence is implemented.
+Development representation selection and ten DSP/classifier fits have executed in MATLAB. Initial learning curves have executed and rejected the current dataset size for FFT, STFT and DWT under the declared stability and confidence-interval criteria. Expansion, full raw baselines and final streaming evaluation remain pending; development results do not establish final performance. No MQTT, ESP32, Wokwi, Flutter, transport or application persistence is implemented.

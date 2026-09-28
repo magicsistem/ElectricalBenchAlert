@@ -80,7 +80,10 @@ for s=1:numel(seq)
                 iou(i,j)=intersection/union;
             end
         end
-        cost=-iou;cost(iou<=0 | iou<threshold)=1e6;pairs=matchpairs(cost,0,'min');
+        % Lexicographic assignment: maximum eligible detection count, then maximum IoU.
+        % The total IoU bonus is below one and cannot sacrifice an eligible match.
+        cost=-(1+iou/(min(numel(gt),numel(ed))+1));cost(iou<=0 | iou<threshold)=1e6;
+        pairs=matchpairs(cost,0,'min');
     end
     for p=1:size(pairs,1)
         i=gt(pairs(p,1));j=ed(pairs(p,2));latency=estimated.confirmation_time_s(j)-truth.start_s(i);
@@ -108,7 +111,7 @@ report=struct('n_true_events',height(truth),'n_estimated_events',height(estimate
     'n_censored_estimates',sum(~closed),'n_completed_matches',sum(matched.interval_complete),'n_sequences',numel(seq),'n_independent_sequences',nGroups,'n_independent_families',numel(unique(linkFamily)), ...
     'n_independent_clusters',nGroups,'normal_exposure_s',sum(exposure),'false_alarms',sum(clusters.false_positives), ...
     'false_alarm_definition','all unmatched confirmations including class errors, normalized by known normal exposure minutes', ...
-    'matching','one-to-one maximum observed interval IoU among exact-class alarms with positive confirming-evidence overlap; confirmation at or after true onset; right-censored matching truncates both intervals at the actual observation boundary; no completed end is inferred', ...
+    'matching','one-to-one maximum eligible match count then maximum observed interval IoU among exact-class alarms with positive confirming-evidence overlap; confirmation at or after true onset; right-censored matching truncates both intervals at the actual observation boundary; no completed end is inferred', ...
     'iou_threshold',threshold,'latency_scope','conditional on matched confirmed events; complete IoU and end error exclude right-censored estimates; misses and censoring counts reported separately');
 for q=1:numel(names),report.(names(q))=values(q);end
 B=cfg.bootstrap_replicates;if isfield(cfg,'temporal_bootstrap_replicates'),B=cfg.temporal_bootstrap_replicates;end

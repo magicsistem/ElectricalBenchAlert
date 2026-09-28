@@ -10,6 +10,16 @@ params=struct('nominal_frequency_hz',60);
 [X,P,info]=eba.extract(chosen,'FFT',params,cfg,'development',[Inf 20],1:2);
 [again,againP,againInfo]=eba.extract(chosen,'FFT',params,cfg,'development',[Inf 20],1:2);
 assert(isequal(X,again) && isequal(P,againP) && isequal(info,againInfo));
+% Cached numeric/label corruption must fail before any training uses it.
+cachePath=fullfile(cfg.output,'feature_cache',info.signature+".mat");backup=[tempname '.mat'];copyfile(cachePath,backup);
+cacheCleanup=onCleanup(@() restoreCache(backup,cachePath));cached=load(cachePath,'X','P','info');
+corrupt=cached;corrupt.X(1,1)=corrupt.X(1,1)+.001;save(cachePath,'-struct','corrupt','-v7');
+rejects(@() eba.extract(chosen,'FFT',params,cfg,'development',[Inf 20],1:2),'eba:FeatureCacheMutation');
+corrupt=cached;corrupt.P.class_id(1)=2;save(cachePath,'-struct','corrupt','-v7');
+rejects(@() eba.extract(chosen,'FFT',params,cfg,'development',[Inf 20],1:2),'eba:FeatureCacheMutation');
+clear cacheCleanup;
+changedCfg=cfg;changedCfg.Fs=9000;
+rejects(@() eba.extract(chosen,'FFT',params,changedCfg,'development',[Inf 20],1:2),'eba:Sampling');
 assert(size(X,2)==24 && size(X,1)==height(chosen)*3 && numel(unique(P.family_id))==height(chosen));
 assert(all(abs(P.measured_snr_db(isfinite(P.SNR_db))-P.SNR_db(isfinite(P.SNR_db)))<1e-10));
 cfg.svm_grid.box_constraint=1;cfg.svm_grid.kernel_scale=1;
@@ -39,4 +49,8 @@ end
 function rejects(f,id)
 ok=false;try,f();catch err,ok=strcmp(err.identifier,id);end
 assert(ok,'Expected rejection %s was not observed.',id);
+end
+
+function restoreCache(backup,path)
+if isfile(backup),[ok,msg]=movefile(backup,path,'f');assert(ok,'eba:CacheRestore','%s',msg);end
 end

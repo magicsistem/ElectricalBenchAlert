@@ -4,7 +4,7 @@ cfg=eba.config();F=eba.families(20,cfg);picked=F([],:);
 for c=2:12,row=find(F.class_id==c & F.split=="validation",1);picked=[picked;F(row,:)];end %#ok<AGROW>
 s=eba.continuousSchedule(picked,cfg,Inf,'control',cfg.stream_seed);
 repeat=eba.continuousSchedule(picked,cfg,Inf,'control',cfg.stream_seed);
-assert(isequal(s,repeat) && s.n_samples>10000 && s.normal_exposure_s==2*(height(picked)+1));
+assert(isequal(s,repeat) && s.n_samples>10000 && abs(s.normal_exposure_s-2*(height(picked)+1)-s.initial_onset_jitter_s)<1e-12);
 idx=(0:s.n_samples-1)';[x,truth]=eba.continuousSignal(s,idx,cfg);
 chunks=[eba.continuousSignal(s,idx(1:17777),cfg);eba.continuousSignal(s,idx(17778:50000),cfg);eba.continuousSignal(s,idx(50001:end),cfg)];
 assert(isequal(x,chunks) && all(isfinite(x)) && height(truth)==11);
@@ -15,15 +15,26 @@ steady=truth.steady_activation;assert(all(truth.physical_duration_s(steady)>=1 &
 assert(all(abs(truth.physical_duration_s(~steady)-truth.canonical_physical_duration_s(~steady))<1e-12));
 closeCfg=cfg;closeCfg.stream_gap_s=.075;
 close=eba.continuousSchedule(picked,closeCfg,Inf,'spacing_control',cfg.stream_seed);
-assert(abs(close.normal_exposure_s-.075*(height(picked)+1))<1e-12 && close.normal_gap_s==.075);
+assert(abs(close.normal_exposure_s-.075*(height(picked)+1)-close.initial_onset_jitter_s)<1e-12 && close.normal_gap_s==.075);
+assert(s.initial_onset_jitter_s>=0 && s.initial_onset_jitter_s<1 && ...
+    s.events.start_sample(1)==20000+round(s.initial_onset_jitter_s*cfg.Fs));
 assert(all(close.events.start_sample(2:end)-close.events.end_sample(1:end-1)==750));
 closeCfg.stream_gap_s=0;rejects(@() eba.continuousSchedule(picked,closeCfg,Inf,'bad',7),'eba:StreamSpacing');
-noisy=s;noisy.snr_db=20;[z,~,m]=eba.continuousSignal(noisy,idx,cfg);
+noisy=s;noisy.snr_db=20;noisy.noise_realization=1;[z,~,m]=eba.continuousSignal(noisy,idx,cfg);
 pieces=[eba.continuousSignal(noisy,idx(1:10000),cfg);eba.continuousSignal(noisy,idx(10001:end),cfg)];
 assert(isequal(z,pieces) && abs(m.measured_nominal_snr_db-20)<1e-10);
 assert(abs(10*log10(s.baseline.base_rms_pu^2/mean((z-x).^2))-20)<1e-10);
+badReal=noisy;badReal.noise_realization=0;rejects(@() eba.continuousSignal(badReal,idx,cfg),'eba:StreamRealization');
 more=noisy;more.snr_db=5;z2=eba.continuousSignal(more,idx,cfg);
 assert(norm((z-x)/norm(z-x)-(z2-x)/norm(z2-x))<1e-11);
+otherReal=eba.continuousSchedule(picked,cfg,20,'control',cfg.stream_seed,'development',2);
+assert(isequal(s.events,otherReal.events) && isequal(s.baseline,otherReal.baseline) && ...
+    s.noise_seed~=otherReal.noise_seed && otherReal.noise_realization==2);
+assert(~isequal(z,eba.continuousSignal(otherReal,idx,cfg)));
+% Adjacent sequence seeds and realization ranks occupy disjoint noise-seed slots.
+adjacent=eba.continuousSchedule(picked,cfg,20,'control',cfg.stream_seed+1,'development',1);
+assert(adjacent.noise_seed~=otherReal.noise_seed);
+rejects(@() eba.continuousSchedule(picked,cfg,20,'bad',7,'development',0),'eba:StreamRealization');
 bad=picked;bad.split(1)="test";rejects(@() eba.continuousSchedule(bad,cfg,20,'bad',7),'eba:StreamSplit');
 bad=picked;bad.split(:)="test";rejects(@() eba.continuousSchedule(bad,cfg,20,'bad',7),'eba:TestFirewall');
 rejects(@() eba.continuousSignal(s,-1,cfg),'eba:StreamIndices');
@@ -78,6 +89,13 @@ bad=gt;bad.family_id(3)=bad.family_id(2);rejects(@() eba.eventMetrics(bad,est,[6
 early=est(1,:);early.estimated_start_s=.5;early.confirmation_time_s=.9;
 r=eba.eventMetrics(gt(1,:),early,60,cfg);assert(r.n_matched_events==0 && r.false_alarms==1 && r.missed_event_rate==1);
 rejects(@() eba.eventMetrics(gt,est,180,cfg),'eba:EventExposure');
+% Summed IoU alone selects one match although two valid detections exist.
+cardinalTruth=gt(1:2,:);cardinalTruth.family_id=["cardinal_f1";"cardinal_f2"];
+cardinalTruth.class_id(:)=2;cardinalTruth.start_s=[0;1];cardinalTruth.end_s=[1;2];
+cardinalEstimate=est(1:2,:);cardinalEstimate.class_id(:)=2;cardinalEstimate.estimated_start_s=[0;.2];
+cardinalEstimate.estimated_end_s=[1.4;.7];cardinalEstimate.confirmation_time_s=[1.3;.7];
+r=eba.eventMetrics(cardinalTruth,cardinalEstimate,60,cfg);
+assert(r.n_matched_events==2 && r.false_alarms==0 && r.recall==1,'Matching sacrificed an eligible detection to increase IoU.');
 normalFamily=F(find(F.class_id==1 & F.split=="validation",1),:);
 normalSchedule=eba.continuousSchedule(normalFamily,cfg,Inf,'normal_control',93);
 assert(isempty(normalSchedule.events) && normalSchedule.normal_exposure_s==30 && normalSchedule.n_samples==300000);

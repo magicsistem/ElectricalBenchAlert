@@ -58,10 +58,16 @@ for c=1:12
     [clean,meta]=eba.record(T(i,:),Inf,1,cfg,'development');
     assert(isequal(clean,full) && isinf(meta.measured_snr_db) && meta.noise_realization==0 && ...
         strcmp(meta.waveform_sha256,eba.hash(full,'numeric')));
+    assert(string(meta.record_id)==eba.recordId(T.family_id(i),Inf,0));
+    [nominal,nominalMeta]=eba.record(T(i,:),20,1,cfg,'development','nominal_baseline_rms_power');
+    assert(abs(nominalMeta.measured_snr_db-20)<1e-10 && abs(10*log10(p.base_rms_pu^2/mean((nominal-clean).^2))-20)<1e-10);
+    assert(nominalMeta.reference_power_pu2==p.base_rms_pu^2 && string(nominalMeta.record_id)==eba.recordId(T.family_id(i),20,1));
+    assert(abs(nominalMeta.measured_disturbed_record_snr_db-10*log10(mean(clean.^2)/mean((nominal-clean).^2)))<1e-12);
     unit=[];
     for snr=cfg.snr_db(:)'
         [noisy,m]=eba.record(T(i,:),snr,1,cfg,'development'); z=noisy-clean;
         assert(abs(m.measured_snr_db-snr)<1e-10 && abs(10*log10(sum(clean.^2)/sum(z.^2))-snr)<1e-10);
+        assert(string(m.record_id)==eba.recordId(T.family_id(i),snr,1));
         assert(abs(mean(z))<1e-12 && m.noise_realization==1 && m.requested_snr_db==snr);
         direction=z/norm(z); if isempty(unit), unit=direction; else, assert(norm(direction-unit)<1e-12); end
         [duplicate,m2]=eba.record(T(i,:),snr,1,cfg,'development'); assert(isequal(noisy,duplicate) && isequal(m,m2));
@@ -69,6 +75,9 @@ for c=1:12
     [x1,m1]=eba.record(T(i,:),10,1,cfg,'development'); [x2,m2]=eba.record(T(i,:),10,2,cfg,'development');
     assert(m1.noise_seed~=m2.noise_seed && ~isequal(x1,x2));
 end
+rejects(@() eba.recordId("f",Inf,1),'eba:RecordIdentity');
+rejects(@() eba.recordId("f",20,0),'eba:RecordIdentity');
+rejects(@() eba.record(T(1,:),20,1,cfg,'development','undefined'),'eba:NoiseReference');
 i=find(T.split=="test",1); rejects(@() eba.record(T(i,:),Inf,1,cfg,'development'),'eba:TestFirewall');
 structural=eba.record(T(i,:),Inf,1,cfg,'structural'); assert(numel(structural)==N);
 rejects(@() eba.record(T(1,:),Inf,1,cfg,'unknown'),'eba:RecordMode');

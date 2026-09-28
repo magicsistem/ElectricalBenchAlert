@@ -61,27 +61,28 @@ for i=1:height(F)
         if F.class_id(i)~=1,coverage(k)=max(0,min(start+N,p.end_sample)-max(start,p.start_sample))/(p.end_sample-p.start_sample);end
     end
 end
-P.record_id=P.family_id+"_snr"+string(P.SNR_db)+"_r"+string(P.realization_id);
+P.record_id=canonicalIDs(P);
 assert(all(isnan(coverage(P.class_id==1))) && all(coverage(P.class_id~=1)>0 & coverage(P.class_id~=1)<=1),'eba:ClipCoverage','Every conditional classification clip must contain physical target support.');
 end
 function [X,P]=nominalFeatures(F,method,parameters,cfg)
 X=zeros(height(F)*3,24);P=metadata(height(F)*3);measured=zeros(height(P),1);k=0;
 for i=1:height(F)
-    p=jsondecode(F.parameters_json(i));clean=eba.record(F(i,:),Inf,1,cfg,'development');
     for snr=[Inf 20 5]
-        k=k+1;signal=clean;
-        if isfinite(snr)
-            noisy=eba.record(F(i,:),snr,1,cfg,'development');noise=(noisy-clean)*p.base_rms_pu/sqrt(mean(clean.^2));signal=clean+noise;
-            assert(abs(10*log10(p.base_rms_pu^2/mean(noise.^2))-snr)<1e-10,'eba:SNR','Nominal-reference SNR verification failed.');
-            measured(k)=10*log10(mean(clean.^2)/mean(noise.^2));
-        else,measured(k)=Inf;end
+        k=k+1;[signal,meta]=eba.record(F(i,:),snr,1,cfg,'development','nominal_baseline_rms_power');
+        assert(snr==Inf || abs(meta.measured_snr_db-snr)<1e-10,'eba:SNR','Nominal-reference SNR verification failed.');
+        measured(k)=meta.measured_disturbed_record_snr_db;
         X(k,:)=eba.features(signal,cfg.Fs,method,parameters);P(k,:)={F.family_id(i),F.split(i),F.class_id(i),snr,double(isfinite(snr))};
     end
 end
-P.record_id=P.family_id+"_snr"+string(P.SNR_db)+"_r"+string(P.realization_id);
+P.record_id=canonicalIDs(P);
 P.measured_disturbed_record_snr_db=measured;
 end
 function P=metadata(n)
 P=table('Size',[n 5],'VariableTypes',{'string','string','double','double','double'}, ...
     'VariableNames',{'family_id','split','class_id','SNR_db','realization_id'});
+end
+
+function ids=canonicalIDs(P)
+ids=strings(height(P),1);
+for i=1:height(P),ids(i)=eba.recordId(P.family_id(i),P.SNR_db(i),P.realization_id(i));end
 end

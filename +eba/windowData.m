@@ -14,7 +14,7 @@ for i=1:height(F)
     end
     starts=min(M-N,max(0,centers-floor(N/2)));
     for snr=[Inf 20 5]
-        signal=eba.record(F(i,:),snr,1,cfg,'development');
+        signal=eba.record(F(i,:),snr,1,cfg,'development','nominal_baseline_rms_power');
         for start=starts
             idx=start+(0:N-1);label=F.class_id(i);
             if F.class_name(i)~="normal" && ~any(idx>=p.start_sample & idx<p.end_sample),label=1;end
@@ -26,7 +26,7 @@ for i=1:height(F)
 end
 assert(k==size(X,1) && all(isfinite(X),'all'),'eba:WindowData','Invalid training crops.');
 info=struct('family_hash',eba.hash(jsonencode(table2struct(F))),'n_families',height(F),'n_records',k, ...
-    'window_samples',N,'snrs',[Inf 20 5],'noise_realization',1,'crop_policy','four fixed event-centred/background positions; any physical overlap labelled as event', ...
+    'window_samples',N,'snrs',[Inf 20 5],'noise_realization',1,'noise_reference','nominal_baseline_rms_power','crop_policy','four fixed event-centred/background positions; any physical overlap labelled as event', ...
     'limitation','Very short events occupy a small fraction of long windows; mixed/edge windows are intentionally retained', ...
     'method',method,'parameters',parameters,'feature_time_s',time);
 end
