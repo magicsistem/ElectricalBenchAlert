@@ -113,7 +113,7 @@ if stage=="all" || stage=="classifiers"
             [candidate,searches{m,k}]=eba.selectClassifier(tuneX,tuneP,cfg,kind,smallCal);
             model=eba.fit(X(train,:),P.class_id(train),cfg,kind,candidate.hyperparameters);
             model=eba.calibrate(model,X(calmask,:),P.class_id(calmask),P.family_id(calmask));
-            [pred,~,prob]=eba.predict(model,X(val,:)); predictions{m,k}=pred;
+            pred=eba.predict(model,X(val,:)); predictions{m,k}=pred;
             model.method=methods(m);model.parameters=S.selected{m};model.training_family_ids=unique(P.family_id(train));
             model.training_dataset_hash=info.family_hash;model.model_version="development-"+lower(methods(m))+"-"+lower(kind);
             models{m,k}=model; modelPath=fullfile(cfg.output,"model_"+lower(methods(m))+"_"+lower(kind)+".mat");
