@@ -84,13 +84,32 @@ end
 if stage=="all" || stage=="classifiers"
     [small,smallCal]=eba.subsetFamilies(F,6,3);[~,cal]=eba.subsetFamilies(F,max(cfg.learning_train_families_per_cell),3);
     models=cell(5,2); predictions=cell(5,2); searches=cell(5,2); validationP=[];
+    sources={'+eba/fit.m','+eba/predict.m','+eba/calibrate.m','+eba/selectClassifier.m', ...
+        '+eba/features.m','+eba/record.m','+eba/waveform.m','+eba/noise.m','scripts/run_development.m'};
+    digests=cellfun(@(p) eba.hash(fullfile(cfg.root,p),'file'),sources,'UniformOutput',false);
+    runSignature=eba.hash(jsonencode(struct('config',S.config_hash,'families',eba.hash(jsonencode(table2struct(F))), ...
+        'parameters',{S.selected},'source_sha256',{digests})));
     for m=1:5
         [tuneX,tuneP]=eba.extract(small,methods(m),S.selected{m},cfg,'development',[Inf 20 5],1);
         [X,P,info]=eba.extract(F,methods(m),S.selected{m},cfg,'development');
         train=P.split=="train" & ~ismember(P.family_id,cal);calmask=P.split=="train" & ismember(P.family_id,cal);val=P.split=="validation";
+        if exist('eba.featureReview','file')
+            [review,redundancy]=eba.featureReview(X(train,:),P(train,:),info.feature_names,cfg);
+            eba.json(fullfile(cfg.output,"feature_review_"+lower(methods(m))+".json"),review);
+            writetable(redundancy,fullfile(cfg.output,"feature_redundancy_"+lower(methods(m))+".csv"));
+        end
         if isempty(validationP),validationP=P(val,:);else,assert(isequal(validationP,P(val,:)),'eba:PairedRecords','Representations received different records.');end
         for k=1:2
             kinds=["SVM","RF"];kind=kinds(k);
+            checkpointPath=fullfile(cfg.output,"development_checkpoint_"+lower(methods(m))+"_"+lower(kind)+".mat");
+            if isfile(checkpointPath)
+                previous=load(checkpointPath,'checkpoint');
+                if strcmp(previous.checkpoint.signature,runSignature)
+                    models{m,k}=previous.checkpoint.model;predictions{m,k}=previous.checkpoint.predictions;
+                    searches{m,k}=previous.checkpoint.search;
+                    fprintf('CLASSIFIER_CHECKPOINT_REUSED %s %s\n',methods(m),kind);continue;
+                end
+            end
             [candidate,searches{m,k}]=eba.selectClassifier(tuneX,tuneP,cfg,kind,smallCal);
             model=eba.fit(X(train,:),P.class_id(train),cfg,kind,candidate.hyperparameters);
             model=eba.calibrate(model,X(calmask,:),P.class_id(calmask),P.family_id(calmask));
@@ -102,6 +121,11 @@ if stage=="all" || stage=="classifiers"
             calibration=eba.calibrationMetrics(model,X(val,:),P.class_id(val));
             eba.json(fullfile(cfg.output,"validation_calibration_"+lower(methods(m))+"_"+lower(kind)+".json"),calibration);
             writetable(searches{m,k},fullfile(cfg.output,"hyperparameters_"+lower(methods(m))+"_"+lower(kind)+".csv"));
+            checkpoint=struct('signature',runSignature,'model',model,'predictions',pred, ...
+                'search',searches{m,k},'calibration_metrics',calibration);
+            save(checkpointPath,'checkpoint','-v7.3');
+            fprintf('CLASSIFIER_REFIT_COMPLETE %s %s fit_families=%d validation_records=%d\n', ...
+                methods(m),kind,numel(model.training_family_ids),sum(val));
         end
     end
     save(classifierFile,'models','predictions','searches','validationP','methods','-v7.3');
