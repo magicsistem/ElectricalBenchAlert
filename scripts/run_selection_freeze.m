@@ -8,6 +8,25 @@ assert(height(acceptance)==5 && all(acceptance.accepted),'eba:DatasetAcceptance'
 verification=jsondecode(fileread(fullfile(cfg.output,'release_development_checks.json')));
 assert(verification.all_tests_passed && strcmp(verification.git_commit,sha),'eba:FreezeChecks','Current clean source must pass native development checks.');
 methods=["FFT","STFT","DWT","CWT","ST"];kinds=["SVM","RF"];
+% A returned ECOC object is insufficient; require native convergence and exact parent identity.
+auditFiles=dir(fullfile(cfg.output,'manifests','native_solver_audit_*.json'));auditEvidence=strings(0,1);
+for q=numel(auditFiles):-1:1
+    auditPath=fullfile(auditFiles(q).folder,auditFiles(q).name);A=jsondecode(fileread(auditPath));
+    if ~A.repository_state_clean || A.extra.n_binary_reruns~=180 || A.extra.n_converged_reruns~=180 || A.extra.n_exact_parent_matches~=180,continue;end
+    assert(strcmp(A.config_hash,eba.hash(fullfile(cfg.root,'config','research_v2.json'),'file')),'eba:SolverAuditReview','Audit config differs.');
+    files=string({A.artifacts.path})';
+    for j=1:numel(files),assert(strcmp(eba.hash(fullfile(cfg.root,files(j)),'file'),A.artifacts(j).sha256),'eba:SolverAuditReview','Audit artifact changed.');end
+    csv=files(endsWith(files,'.csv') & ~endsWith(files,'_progress.csv'));assert(numel(csv)==1);
+    numerical=readtable(fullfile(cfg.root,csv),'TextType','string');
+    assert(height(numerical)==180 && all(numerical.rerun_converged & numerical.exact_parent_score_equality & numerical.exact_parent_parameter_equality),'eba:SolverAuditReview','Incomplete numerical certificate.');
+    for j=1:5
+        group=numerical(numerical.method==methods(j),:);
+        parent=fullfile(cfg.output,"model_"+lower(methods(j))+"_svm.mat");
+        assert(height(group)==36 && isequal(sort(group.binary_learner),(1:36)') && all(group.parent_model_sha256==string(eba.hash(parent,'file'))),'eba:SolverAuditReview','Certificate does not cover each saved primary binary decision function.');
+    end
+    auditEvidence=[string(auditPath);fullfile(cfg.root,files)];break;
+end
+assert(~isempty(auditEvidence),'eba:SolverAuditReview','Complete native numerical certificate is required before test authorization.');
 S=load(fullfile(cfg.output,'stream_full_development.mat'),'retained','summary');
 classification=readtable(fullfile(cfg.output,'validation_svm_metrics.csv'),'TextType','string');
 noise=load(fullfile(cfg.output,'validation_svm_statistics.mat'),'details');robust=noise.details.robustness_summary;
@@ -94,6 +113,7 @@ evidenceFiles=["development_learning.csv","development_size_acceptance.csv","dev
     "validation_svm_metrics.csv","validation_svm_statistics.mat","validation_rf_metrics.csv","frozen_validation_pareto.csv","release_development_checks.json"];
 writetable(pareto,fullfile(cfg.output,'frozen_validation_pareto.csv'));
 for i=1:numel(evidenceFiles),bound(end+1)=binding(fullfile(cfg.output,evidenceFiles(i)),'evidence',cfg);end %#ok<AGROW>
+for i=1:numel(auditEvidence),bound(end+1)=binding(auditEvidence(i),'evidence',cfg);end %#ok<AGROW>
 freeze=struct('schema_version','1.0.0','experiment_id','eba-v1-confirmed-event','source_commit',sha, ...
     'test_access_authorized',true,'MATLAB_version',version,'required_toolbox_versions',toolboxes,'config_sha256',eba.hash(fullfile(cfg.root,'config','research_v2.json'),'file'), ...
     'dataset_sha256',parameters,'split_sha256',split,'waveform_catalog_sha256',verification.waveform_catalog_sha256,'bound_files',bound, ...
