@@ -1,7 +1,14 @@
-function schedule=continuousSchedule(F,cfg,snr,sequence_id,seed,mode,realization)
+function schedule=continuousSchedule(F,cfg,snr,sequence_id,seed,mode,realization,options)
 %CONTINUOUSSCHEDULE Nonoverlapping physical activations on one common baseline.
 if nargin<6,mode="development";end
 if nargin<7,realization=1;end
+if nargin<8,options=struct();end
+assert(isstruct(options) && isscalar(options) && all(ismember(fieldnames(options), ...
+    {'gap_s','context_s','normal_duration_s'})),'eba:StreamSpacing','Unknown schedule timing option.');
+for name=string(fieldnames(options)).'
+    v=options.(name);assert(isnumeric(v) && isscalar(v) && isfinite(v) && v>0, ...
+        'eba:StreamSpacing','Schedule timing options must be finite positive seconds.');
+end
 assert(isnumeric(realization) && isscalar(realization) && isfinite(realization) && ...
     realization==fix(realization) && realization>=1 && realization<=cfg.noise_realizations && realization<16, ...
     'eba:StreamRealization','A declared independent noise realization is required.');
@@ -24,7 +31,14 @@ assert(numel(split)==1 && any(split==["train","validation","test"]),'eba:StreamS
 if mode=="development"
     assert(split~="test",'eba:TestFirewall','Development schedules deny test families.');
 else
-    eba.requireFrozen(cfg);
+    freeze=eba.requireFrozen(cfg,'verify',F);
+    if ~isempty(fieldnames(options))
+        assert(isfield(freeze,'stream_protocol') && isfield(freeze.stream_protocol,'schedule_options'), ...
+            'eba:TestFirewall','Final timing options must have been declared before test.');
+        allowed=freeze.stream_protocol.schedule_options;found=false;
+        for a=1:numel(allowed),if isequaln(orderfields(options),orderfields(allowed(a))),found=true;break;end;end
+        assert(found,'eba:TestFirewall','Final schedule timing differs from the frozen recipe.');
+    end
 end
 family=string(F.family_id(:));
 assert(all(~ismissing(family) & strlength(strtrim(family))>0) && numel(unique(family))==height(F), ...
@@ -51,11 +65,19 @@ if normal_only
 end
 [~,order]=sort(string(F.family_id)); order=order(randperm(r,height(F))); F=F(order,:);
 n=height(F);gapSeconds=2;if isfield(cfg,'stream_gap_s'),gapSeconds=cfg.stream_gap_s;end
+if isfield(options,'gap_s'),gapSeconds=options.gap_s;end
 assert(isnumeric(gapSeconds) && isscalar(gapSeconds) && isfinite(gapSeconds) && gapSeconds>0, ...
     'eba:StreamSpacing','A finite positive event spacing is required.');
-gap=max(1,round(gapSeconds*cfg.Fs));onsetJitter=0;
+gap=max(1,round(gapSeconds*cfg.Fs));context=gap;
+if isfield(cfg,'stream_context_s')
+    assert(isnumeric(cfg.stream_context_s) && isscalar(cfg.stream_context_s) && isfinite(cfg.stream_context_s) && cfg.stream_context_s>0, ...
+        'eba:StreamSpacing','A finite positive pre/post context is required.');
+    context=max(1,round(cfg.stream_context_s*cfg.Fs));
+end
+if isfield(options,'context_s'),context=max(1,round(options.context_s*cfg.Fs));end
+onsetJitter=0;
 if n>0,onsetJitter=randi(r,[0 cfg.Fs-1]);end
-cursor=gap+onsetJitter;
+cursor=context+onsetJitter;
 events=table('Size',[n 16],'VariableTypes', ...
     {'string','string','string','string','string','string','string','double','double','double','double','double','double','double','double','logical'}, ...
     'VariableNames',{'event_id','sequence_id','family_id','split','class_name','labels_json','project_severity', ...
@@ -86,11 +108,13 @@ for i=1:n
     events.start_s(i)=cursor/cfg.Fs; events.end_s(i)=(cursor+count)/cfg.Fs;
     events.physical_duration_s(i)=count/cfg.Fs; events.canonical_physical_duration_s(i)=canonical;
     events.severity_metric(i)=p.severity_metric; events.steady_activation(i)=steady;
-    parameters(i)=jsonencode(p); cursor=cursor+count+gap;
+    parameters(i)=jsonencode(p);cursor=cursor+count+gap;
+    if i==n,cursor=cursor-gap+context;end
 end
 events.parameters_json=parameters;
 if normal_only
     seconds=30;if isfield(cfg,'normal_stream_duration_s'),seconds=cfg.normal_stream_duration_s;end
+    if isfield(options,'normal_duration_s'),seconds=options.normal_duration_s;end
     assert(isnumeric(seconds) && isscalar(seconds) && isfinite(seconds) && seconds>0,'eba:StreamSupport','Normal exposure duration must be positive.');
     cursor=round(seconds*cfg.Fs);
 end
@@ -98,7 +122,7 @@ schedule=struct('schema_version',"2.0.0",'sequence_id',sequence_id,'split',split
     'Fs',double(cfg.Fs),'n_samples',cursor,'duration_s',cursor/cfg.Fs,'seed',double(seed), ...
     'noise_seed',noiseSeed,'noise_realization',realization*isfinite(snr),'snr_db',double(snr),'baseline',baseline, ...
     'events',events,'family_ids',independent_families,'normal_exposure_s',(cursor-sum(events.end_sample-events.start_sample))/cfg.Fs, ...
-    'normal_gap_s',gap/cfg.Fs,'initial_onset_jitter_s',onsetJitter/cfg.Fs,'noise_reference',"nominal_sequence_baseline_rms_power", ...
+    'normal_gap_s',gap/cfg.Fs,'normal_context_s',context/cfg.Fs,'initial_onset_jitter_s',onsetJitter/cfg.Fs,'noise_reference',"nominal_sequence_baseline_rms_power", ...
     'support_convention',"integer zero-based half-open [start_sample,end_sample)");
 end
 

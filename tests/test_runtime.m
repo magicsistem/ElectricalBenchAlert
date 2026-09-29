@@ -9,6 +9,8 @@ end
 model=eba.fit([X;X+.001],repmat((1:9)',2,1),cfg,'SVM',struct('kernel','linear','box_constraint',1,'kernel_scale',1));
 model.method="FFT";model.parameters=params;
 [r,t]=eba.runtime(model,signals,cfg.Fs,.0125,cfg);
+assert(abs(r.throughput_windows_per_s-height(t)/sum(t.total_s))<1e-12 && ...
+    abs(r.throughput_input_samples_per_s-.0125*cfg.Fs*r.throughput_windows_per_s)<1e-9);
 assert(height(t)==8 && all(t.feature_s>0 & t.classification_s>0 & t.total_s>0));
 assert(abs(r.total_p95_s-quantile(t.total_s,.95))<1e-12 && abs(r.streaming_real_time_factor-r.total_p95_s/.0125)<1e-12);
 assert(abs(r.streaming_real_time_factor/r.window_real_time_factor-80)<1e-10 && r.representation_bytes_median>0);

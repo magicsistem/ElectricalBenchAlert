@@ -25,10 +25,10 @@ for name=["feature","classification","total"]
     q=quantile(timings.(name+"_s"),[.5 .95 .99]);
     report.(name+"_median_s")=q(1);report.(name+"_p95_s")=q(2);report.(name+"_p99_s")=q(3);
 end
-report.throughput_windows_per_s=1/report.total_median_s;
+report.throughput_windows_per_s=n/sum(timings.total_s);
 report.window_real_time_factor=report.total_p95_s/(counts(1)/Fs);
 report.streaming_real_time_factor=report.total_p95_s/hop_s;
-report.throughput_input_samples_per_s=hop_s*Fs/report.total_median_s;
+report.throughput_input_samples_per_s=hop_s*Fs*report.throughput_windows_per_s;
 assert(all(isfinite(values),'all') && all(values(:,2:4)>=0,'all') && all(values(:,4)>=max(values(:,2:3),[],2)), ...
     'eba:RuntimeTiming','Invalid measured stage timing.');
 end

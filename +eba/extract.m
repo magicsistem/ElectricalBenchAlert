@@ -12,7 +12,7 @@ assert(isnumeric(realizations) && isreal(realizations) && isvector(realizations)
 snrs=double(snrs(:).');realizations=double(realizations(:).');
 expectedRecords=height(F)*(sum(isinf(snrs))+sum(isfinite(snrs))*numel(realizations));
 assert(all(F.split~="test") || mode=="final",'eba:TestFirewall','Feature extraction cannot inspect test before final freeze.');
-if string(mode)=="final",eba.requireFrozen(cfg);end
+if string(mode)=="final",eba.requireFrozen(cfg,'verify',F);end
 assert(~isempty(F),'eba:ExtractEmpty','No families requested.');
 [key,famDigest]=eba.featureCacheKey(F,method,parameters,cfg,mode,snrs,realizations);
 folder=fullfile(cfg.output,'feature_cache');if ~isfolder(folder),mkdir(folder);end

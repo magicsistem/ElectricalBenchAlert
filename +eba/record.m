@@ -12,7 +12,7 @@ assert(any(string(row.split)==["train" "validation" "test"]),'eba:Split','Invali
 if mode=="development"
     assert(string(row.split)~="test",'eba:TestFirewall','Development waveform access denies test families.');
 elseif mode=="final"
-    eba.requireFrozen(cfg);
+    eba.requireFrozen(cfg,'verify',row);
 end
 assert(isscalar(realization) && realization==fix(realization) && realization>=1 && realization<=cfg.noise_realizations, ...
     'eba:Realization','Noise realization is outside the configured range.');
