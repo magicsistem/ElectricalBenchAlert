@@ -28,6 +28,19 @@ bad=freeze;bad.bound_files(1).path='a/./source.json';eba.json(path,bad);fails(@(
 bad=freeze;bad.bound_files(1).sha256='invalid';eba.json(path,bad);fails(@() eba.requireFrozen(cfg));
 bad=freeze;bad.bound_files(2).path=bad.bound_files(1).path;eba.json(path,bad);fails(@() eba.requireFrozen(cfg));
 bad=freeze;bad.bound_files(4).role='source';eba.json(path,bad);fails(@() eba.requireFrozen(cfg));
+% Registered inference paths cannot silently switch to an unbound/source artifact.
+registered=freeze;
+for name=["offline_models","combined_models","raw_models"]
+    registered.(name)=struct('path','model.json');
+end
+registered.selected_stream=struct('path','model.json','model_sha256',bound(4).sha256);
+eba.json(path,registered);eba.requireFrozen(cfg);
+for name=["offline_models","combined_models","raw_models","selected_stream"]
+    bad=registered;bad.(name).path='source.json';eba.json(path,bad);fails(@() eba.requireFrozen(cfg));
+    bad=registered;bad.(name).path='missing.json';eba.json(path,bad);fails(@() eba.requireFrozen(cfg));
+end
+bad=registered;bad.raw_models=repmat(registered.raw_models,2,1);eba.json(path,bad);fails(@() eba.requireFrozen(cfg));
+bad=registered;bad.selected_stream.model_sha256=repmat('0',1,64);eba.json(path,bad);fails(@() eba.requireFrozen(cfg));
 eba.json(path,freeze);changed=cfg;changed.Fs=9000;fails(@() eba.requireFrozen(changed));
 unbound=cfg;unbound.stream_gap_s=.01;fails(@() eba.requireFrozen(unbound));
 % Same length and restored timestamp still fail the full SHA check.

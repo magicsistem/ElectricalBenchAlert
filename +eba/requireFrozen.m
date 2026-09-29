@@ -65,6 +65,25 @@ for k=1:numel(files)
 end
 assert(numel(unique(paths))==numel(paths) && all(ismember(["source","config","dataset","split","model"],roles)), ...
     'eba:TestFirewall','Duplicate artifact or missing scientific binding role.');
+% Every declared inference path must refer to an actually hash-bound model role.
+for name=["offline_models","combined_models","raw_models","selected_stream"]
+    if ~isfield(freeze,name),continue;end
+    declared=freeze.(name);
+    assert(isstruct(declared) && ~isempty(declared) && all(isfield(declared,'path')), ...
+        'eba:TestFirewall','Declared inference models need nonempty path records.');
+    modelPaths=strings(numel(declared),1);
+    for k=1:numel(declared)
+        assert(ischar(declared(k).path),'eba:TestFirewall','Declared model path must be text.');
+        modelPaths(k)=string(declared(k).path);index=find(paths==modelPaths(k) & roles=="model");
+        assert(isscalar(index),'eba:TestFirewall','Declared inference model has no unique SHA-bound model role.');
+        if name=="selected_stream"
+            assert(numel(declared)==1 && isfield(declared,'model_sha256') && ...
+                validHash(declared.model_sha256) && strcmp(declared.model_sha256,files(index).sha256), ...
+                'eba:TestFirewall','Selected stream model digest differs from its binding.');
+        end
+    end
+    assert(numel(unique(modelPaths))==numel(modelPaths),'eba:TestFirewall','Duplicated inference model path.');
+end
 F=eba.families(cfg.families_per_cell,cfg);
 assert(strcmp(freeze.dataset_sha256,eba.hash(jsonencode(table2struct(F)))) && ...
     strcmp(freeze.split_sha256,eba.hash(jsonencode(table2struct(F(:,{'family_id','split'}))))), ...

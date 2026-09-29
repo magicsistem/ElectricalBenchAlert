@@ -55,7 +55,8 @@
     },
     "estimated_start": {
       "type": "number",
-      "minimum": 0
+      "minimum": 0,
+      "description": "Earliest supporting-window start, in simulated seconds; this can precede true physical onset."
     },
     "confirmation_time": {
       "type": "number",
@@ -63,12 +64,14 @@
     },
     "duration_so_far": {
       "type": "number",
-      "exclusiveMinimum": 0
+      "exclusiveMinimum": 0,
+      "description": "Observed supporting-window span at confirmation, not a ground-truth physical duration."
     },
     "confidence": {
       "type": "number",
       "minimum": 0,
-      "maximum": 1
+      "maximum": 1,
+      "description": "Minimum calibrated supporting-window score; not an event probability."
     },
     "confidence_calibrated": {
       "const": true
@@ -84,7 +87,31 @@
           "decision_time_s",
           "class_id",
           "evidence_score"
-        ]
+        ],
+        "properties": {
+          "window_start_s": {
+            "type": "number",
+            "minimum": 0
+          },
+          "window_end_s": {
+            "type": "number",
+            "exclusiveMinimum": 0
+          },
+          "decision_time_s": {
+            "type": "number",
+            "exclusiveMinimum": 0
+          },
+          "class_id": {
+            "type": "integer",
+            "minimum": 2,
+            "maximum": 12
+          },
+          "evidence_score": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          }
+        }
       }
     },
     "method_version": {
