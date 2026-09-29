@@ -19,6 +19,13 @@ assert(abs(close.normal_exposure_s-.075*(height(picked)+1)-close.initial_onset_j
 assert(s.initial_onset_jitter_s>=0 && s.initial_onset_jitter_s<1 && ...
     s.events.start_sample(1)==20000+round(s.initial_onset_jitter_s*cfg.Fs));
 assert(all(close.events.start_sample(2:end)-close.events.end_sample(1:end-1)==750));
+options=struct('gap_s',.05,'context_s',2,'normal_duration_s',30);
+controlled=eba.continuousSchedule(picked,cfg,Inf,'context_control',cfg.stream_seed,'development',1,options);
+assert(controlled.normal_context_s==2 && controlled.normal_gap_s==.05 && ...
+    abs(controlled.normal_exposure_s-4-.05*(height(picked)-1)-controlled.initial_onset_jitter_s)<1e-12);
+assert(all(controlled.events.start_sample(2:end)-controlled.events.end_sample(1:end-1)==500));
+invalid=options;invalid.context_s=NaN;rejects(@() eba.continuousSchedule(picked,cfg,Inf,'bad',7,'development',1,invalid),'eba:StreamSpacing');
+invalid=options;invalid.actual_onset=0;rejects(@() eba.continuousSchedule(picked,cfg,Inf,'bad',7,'development',1,invalid),'eba:StreamSpacing');
 closeCfg.stream_gap_s=0;rejects(@() eba.continuousSchedule(picked,closeCfg,Inf,'bad',7),'eba:StreamSpacing');
 noisy=s;noisy.snr_db=20;noisy.noise_realization=1;[z,~,m]=eba.continuousSignal(noisy,idx,cfg);
 pieces=[eba.continuousSignal(noisy,idx(1:10000),cfg);eba.continuousSignal(noisy,idx(10001:end),cfg)];
@@ -165,6 +172,28 @@ assert(any(result.phases=="NORMAL") && any(result.phases=="SUSPECTED") && result
 assert(result.metrics.n_matched_events==1 && result.metrics.false_alarms==0 && result.metrics.n_censored_estimates==1);
 assert(isnan(result.metrics.mean_absolute_end_error_s) && result.observed_until_s<unitSchedule.duration_s);
 assert(result.confirmed_events.class=="voltage_sag" && result.confirmed_events.confirmation_time>=unitSchedule.events.start_s);
+% Reusable prediction cache must agree with independently processed arrived evidence.
+folder=tempname;mkdir(folder);cleanupFolder=onCleanup(@() rmdir(folder,'s'));cacheCfg=unitCfg;cacheCfg.output=folder;
+modelPath=fullfile(folder,'source_model.mat');save(modelPath,'model','-v7.3');
+P=eba.streamPredictions(unitSchedule,model,cacheCfg,modelPath,true);
+repeat=eba.streamPredictions(unitSchedule,model,cacheCfg,modelPath,true);assert(isequaln(P,repeat));
+[~,~,emissions]=eba.replayWindows(P,unitSettings);assert(numel(emissions.confirmed)==1 && emissions.confirmed.class_id==2);
+evidence={'window_start_s','window_end_s','decision_time_s','class_id','confidence'};
+assert(isequaln(P(1:height(result.window_predictions),evidence),result.window_predictions(:,evidence)));
+[report,detail]=eba.evaluateStreamEvidence({unitSchedule},{P},unitSettings,unitCfg);
+assert(report.n_matched_events==1 && report.false_alarms==0 && report.n_independent_clusters==1 && height(detail.exposure)==1);
+% An in-memory fitted object cannot claim the identity of another serialized model.
+other=eba.fit(X,labels,cfg,'SVM',struct('kernel','linear','box_constraint',.1,'kernel_scale',1));
+changed=model;changed.fitted=other.fitted;
+rejects(@() eba.streamPredictions(unitSchedule,changed,cacheCfg,modelPath,true),'eba:StreamModelMutation');
+changed=model;changed.mean(1)=changed.mean(1)+.01;
+rejects(@() eba.streamPredictions(unitSchedule,changed,cacheCfg,modelPath,true),'eba:StreamModelMutation');
+files=dir(fullfile(folder,'stream_prediction_cache','*.mat'));assert(isscalar(files));path=fullfile(files.folder,files.name);
+saved=load(path);saved.result.confidence(1)=.123;save(path,'-struct','saved','-v7');
+rejects(@() eba.streamPredictions(unitSchedule,model,cacheCfg,modelPath,true),'eba:StreamCacheMutation');
+short=unitSchedule;short.n_samples=model.window_samples-1;
+rejects(@() eba.processStream(short,model,unitSettings,unitCfg,false),'eba:StreamWindow');
+rejects(@() eba.replayWindows(P([],:),unitSettings),'eba:StreamReplay');
 fprintf('STREAMING_SCIENTIFIC_TESTS_PASS events=%d samples=%d\n',height(truth),numel(x));
 end
 function p=prediction(start,c,confidence)

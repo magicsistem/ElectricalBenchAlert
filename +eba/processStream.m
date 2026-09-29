@@ -5,7 +5,7 @@ assert(islogical(stopAtConfirmed) && isscalar(stopAtConfirmed),'eba:StreamStop',
 N=model.window_samples;hop=model.hop_samples;
 assert(N>=4 && hop>=1 && hop<=N && N==fix(N) && hop==fix(hop),'eba:StreamWindow','Invalid window/hop.');
 settings.sequence_id=schedule.sequence_id;settings.classes=cfg.classes;settings.confidence_calibrated=model.calibrated;
-ends=N:hop:schedule.n_samples;n=numel(ends);state=[];events=struct([]);completed=struct([]);phases=strings(n,1);
+ends=N:hop:schedule.n_samples;n=numel(ends);assert(n>0,'eba:StreamWindow','A complete arrived window is required.');state=[];events=struct([]);completed=struct([]);phases=strings(n,1);
 windows=table('Size',[n 8],'VariableTypes',{'double','double','double','double','double','double','double','string'}, ...
     'VariableNames',{'window_start_s','window_end_s','decision_time_s','class_id','confidence','feature_time_s','classification_time_s','state'});
 feature_times=zeros(n,1);class_times=zeros(n,1);total_times=zeros(n,1);

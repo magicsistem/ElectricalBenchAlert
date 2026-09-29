@@ -60,6 +60,11 @@ for kind=["CNN" "TCN"]
     assert(isfinite(report.startup_RSS_bytes) && report.process_VmHWM_bytes>=report.startup_RSS_bytes);
     [p,c,q,s]=eba.rawPredict(model,{x;2*x});
     assert(all(ismember(p,1:9)) && all(c>=0 & c<=1) && all(isfinite(s),'all') && all(abs(sum(q,2)-1)<1e-12));
+    [retrained,repeatedReport]=eba.rawTrain(F,cfg,kind,seed);
+    assert(strcmp(weightsHash(model.network),weightsHash(retrained.network)) && ...
+        model.temperature==retrained.temperature && isequal(report.validation_raw_scores,repeatedReport.validation_raw_scores), ...
+        'Same-seed one-epoch native CPU retraining changed learned weights or calibrated evidence.');
+    fprintf('RAW_ONE_EPOCH_RETRAINING_EQUALITY_PASS kind=%s\n',kind);
     fprintf('RAW_ONE_EPOCH_TRAINED kind=%s parameters=%d iterations=%d seconds=%.6g\n',kind,a.learnable_parameters,report.iterations_completed,report.training_time_s);
 end
 fprintf('RAW_BASELINES_TESTS_PASS\n');
