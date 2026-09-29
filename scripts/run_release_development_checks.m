@@ -1,0 +1,24 @@
+function report=run_release_development_checks()
+%RUN_RELEASE_DEVELOPMENT_CHECKS Fail-capable native evidence for pre-test source and dataset gates.
+cfg=eba.config();[status,commit]=system('git rev-parse HEAD');[~,dirty]=system('git status --porcelain --untracked-files=normal');
+assert(status==0 && isempty(strtrim(dirty)),'eba:ReleaseSource','Native release checks require clean committed source.');
+run_all_tests;
+acceptance=readtable(fullfile(cfg.output,'development_size_acceptance.csv'));
+assert(height(acceptance)==5 && all(acceptance.accepted),'eba:DatasetAcceptance','All five sample-size criteria must pass before release freeze.');
+F=eba.families(cfg.families_per_cell,cfg);eba.validateFamilies(F,cfg);
+paths=dir(fullfile(cfg.output,'record_catalog_*','records.mat'));assert(numel(paths)==1,'eba:DatasetCatalog','One authoritative full waveform catalog is required.');
+C=load(fullfile(paths.folder,paths.name),'V');V=C.V;
+assert(height(V)==height(F)*(1+numel(cfg.snr_db)*cfg.noise_realizations),'eba:DatasetCatalog','The full catalog record count differs.');
+G=findgroups(V.family_id);crossing=splitapply(@(s)numel(unique(s)),V.split,G);
+assert(all(crossing==1) && numel(crossing)==height(F),'eba:Leakage','Family derivatives crossed split.');
+report=struct('git_commit',strtrim(commit),'repository_state_clean',true,'all_tests_passed',true, ...
+    'native_suite_count',9,'accepted_learning_methods',height(acceptance),'families',height(F), ...
+    'derived_records',height(V),'crossing_families',sum(crossing~=1), ...
+    'family_parameters_sha256',eba.hash(jsonencode(table2struct(F))), ...
+    'split_sha256',eba.hash(jsonencode(table2struct(F(:,{'family_id','split'})))), ...
+    'waveform_catalog_sha256',eba.hash(strjoin(V.waveform_sha256,'')), ...
+    'scope','unit/integration/scientific controls and full pre-test catalog invariants; no test model predictions');
+path=fullfile(cfg.output,'release_development_checks.json');eba.json(path,report);
+eba.manifest('release_development_checks',cfg,report,{path,fullfile(paths.folder,paths.name)});
+fprintf('RELEASE_DEVELOPMENT_CHECKS_PASS suites=9 families=%d records=%d leakage=0\n',height(F),height(V));
+end

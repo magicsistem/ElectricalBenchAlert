@@ -11,7 +11,7 @@ for i=1:height(F)
     if isfield(p,'thd_ratio'),plateau=plateau*sqrt(1+p.thd_ratio^2);end
     for snr=[Inf 20 5]
         q=q+1;signal=eba.record(F(i,:),snr,1,cfg,'development');
-        P(q,:)={F.family_id(i)+"_snr"+snr,F.family_id(i),F.severity_stratum(i),snr,double(isfinite(snr))};
+        P(q,:)={eba.recordId(F.family_id(i),snr,double(isfinite(snr))),F.family_id(i),F.severity_stratum(i),snr,double(isfinite(snr))};
         for w=1:numel(cycles)
             N=round(cfg.Fs*cycles(w)/cfg.nominal_frequency_hz);
             start=min(numel(signal)-N,max(0,round((p.start_sample+p.end_sample-N)/2)));
