@@ -31,6 +31,7 @@ extra=struct('workload_hash',report.workload_sha256,'method',method,'classifier'
 if raw,extra.parameters=model.architecture;extra.hyperparameters=struct('model_seed',model.seed); ...
 else,extra.parameters=model.parameters;extra.hyperparameters=model.hyperparameters;end
 if isfield(model,'training_git_commit'),extra.training_git_commit=model.training_git_commit;end
+if isfield(model,'solver_configuration'),extra.solver_configuration=model.solver_configuration;end
 eba.manifest(id,cfg,extra,{tablePath,reportPath,path});
 fprintf('RUNTIME_BENCHMARK_PASS method=%s classifier=%s p95_s=%.6g peak_process_RSS_bytes=%.0f\n',method,kind,report.total_p95_s,report.peak_process_RSS_bytes);
 end

@@ -24,6 +24,7 @@ if isfield(extra,'parameters'),m.parameters=extra.parameters;end
 m.classifier="not_applicable";
 if isfield(extra,'classifier'),m.classifier=extra.classifier;elseif isfield(extra,'classifier_tracks'),m.classifier=extra.classifier_tracks;end
 m.hyperparameters=struct();if isfield(extra,'hyperparameters'),m.hyperparameters=extra.hyperparameters;end
+if isfield(extra,'solver_configuration'),m.solver_configuration=extra.solver_configuration;end
 m.hash_scope='dataset_hash: full canonical parameter families; split_hash: full family_id/split mapping; input subsets recorded separately';
 items=struct('path',{},'sha256',{});
 for k=1:numel(artifacts)

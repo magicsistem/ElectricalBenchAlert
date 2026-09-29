@@ -7,10 +7,10 @@ S=load(fullfile(cfg.output,'development_transform_selection.mat'),'selected','me
 D=load(fullfile(cfg.output,'development_classifiers.mat'),'models');
 statCfg=cfg;statCfg.classes=cfg.classes(1:cfg.primary_class_count);artifacts=strings(0,1);
 if stage=="clips"
-    [families,cal]=eba.subsetFamilies(F,3,1);lengths=[.2 .5 1];predictions=[];names=strings(0,1);validation=[];rows=cell(5,3);
+    [families,cal]=eba.subsetFamilies(F,3,1);lengths=[.2 .5 1];parameterGrid=cell(5,3);inputFamilies=families;predictions=[];names=strings(0,1);validation=[];rows=cell(5,3);
     for m=1:5
         for j=1:3
-            N=round(lengths(j)*cfg.Fs);parameters=eba.windowParameters(S.methods(m),S.selected{m},N);
+            N=round(lengths(j)*cfg.Fs);parameters=eba.windowParameters(S.methods(m),S.selected{m},N);parameterGrid{m,j}=parameters;
             [X,P,coverage]=cropFeatures(families,N,S.methods(m),parameters,cfg);
             fitting=P.split=="train" & ~ismember(P.family_id,cal);val=P.split=="validation";
             model=eba.fit(X(fitting,:),P.class_id(fitting),cfg,'SVM',D.models{m,1}.hyperparameters);
@@ -27,10 +27,10 @@ if stage=="clips"
     for m=1:5,planned(2*m-1,:)=[3*m-2 3*m];planned(2*m,:)=[3*m-1 3*m];end
     statCfg.planned_comparisons=planned;statCfg.comparison_family="canonical_length_ten_secondary_comparisons";
     [summary,pairs,noise,details]=eba.familyStats(validation,predictions,names,statCfg);
-    coverage=vertcat(rows{:});writetable(coverage,fullfile(cfg.output,'sensitivity_clip_coverage.csv'));
+    coverage=vertcat(rows{:});coveragePath=fullfile(cfg.output,'sensitivity_clip_coverage.csv');writetable(coverage,coveragePath);artifacts(end+1)=coveragePath;
     limitation='Oracle event-centred offline crops ensure target visibility; shorter clips can truncate physical support. This is conditional EventBench sensitivity and cannot select online timing.';
 else
-    valFamilies=F(F.split=="validation",:);predictions=[];validation=[];
+    valFamilies=F(F.split=="validation",:);inputFamilies=valFamilies;parameterGrid=S.selected;predictions=[];validation=[];
     for m=1:5
         [X,P]=nominalFeatures(valFamilies,S.methods(m),S.selected{m},cfg);
         if isempty(validation),validation=P;else,assert(isequal(validation,P),'eba:PairedRecords','Noise-reference sensitivity lost pairing.');end
@@ -44,9 +44,11 @@ end
 prefix="sensitivity_"+stage;paths=[fullfile(cfg.output,prefix+"_metrics.csv");fullfile(cfg.output,prefix+"_paired.csv");fullfile(cfg.output,prefix+"_snr.csv");fullfile(cfg.output,prefix+"_statistics.mat")];
 writetable(summary,paths(1));writetable(pairs,paths(2));writetable(noise,paths(3));save(paths(4),'summary','pairs','noise','details','validation','predictions','limitation','-v7.3');artifacts=[artifacts;paths];
 eba.manifest(prefix,cfg,struct('scope','development only; no test access; secondary scientific sensitivity', ...
-    'method',stage,'parameters',struct('lengths_s',[.2 .5 1],'snrs_db',[Inf 20 5],'realization',1), ...
-    'classifier','fixed selected SVM hyperparameters; no additional search', ...
-    'dataset_hash',eba.hash(jsonencode(table2struct(F))),'split_hash',eba.hash(jsonencode(table2struct(F(:,{'family_id','split'})))), ...
+    'method',stage,'methods',S.methods,'parameters',{parameterGrid}, ...
+    'input_protocol',struct('lengths_s',[.2 .5 1],'snrs_db',[Inf 20 5],'realization',1), ...
+    'classifier','SVM','hyperparameters',D.models{1,1}.hyperparameters, ...
+    'solver_configuration',D.models{1,1}.solver_configuration,'hyperparameter_policy','fixed selected shared core configuration; no additional search', ...
+    'dataset_hash',eba.hash(jsonencode(table2struct(inputFamilies))),'split_hash',eba.hash(jsonencode(table2struct(inputFamilies(:,{'family_id','split'})))), ...
     'interpretation_limit',limitation),artifacts);
 fprintf('SCIENTIFIC_SENSITIVITY_COMPLETE stage=%s test_accessed=0\n',stage);
 end
