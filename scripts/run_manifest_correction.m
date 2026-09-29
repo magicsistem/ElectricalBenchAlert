@@ -3,6 +3,7 @@ function run_manifest_correction()
 cfg=eba.config();S=load(fullfile(cfg.output,'development_transform_selection.mat'),'selected','methods','selection');
 D=load(fullfile(cfg.output,'development_classifiers.mat'),'shared');
 ids=["development_transform_selection","development_classifiers","development_learning"];
+if isfile(fullfile(cfg.output,'manifests','deployment_model_compaction.json')),ids(end+1)="deployment_model_compaction";end
 for id=ids
     path=fullfile(cfg.output,'manifests',id+".json");old=jsondecode(fileread(path));extra=old.extra;
     assert(old.repository_state_clean,'eba:ManifestCorrection','Original computation must identify clean source.');
@@ -16,7 +17,7 @@ for id=ids
     if id=="development_transform_selection"
         extra.classifier='SVM';extra.hyperparameters=struct('kernel','linear','box_constraint',1,'kernel_scale',1);
         extra.parameter_grid=table2struct(S.selection(:,{'method','candidate_id','parameters_json'}));
-    elseif id=="development_classifiers"
+    elseif any(id==["development_classifiers","deployment_model_compaction"])
         extra.classifier_tracks=["SVM","RF"];extra.hyperparameters=D.shared;
     else
         extra.classifier='SVM';extra.hyperparameters=D.shared{1};

@@ -64,6 +64,11 @@ for kind=["CNN" "TCN"]
     assert(strcmp(weightsHash(model.network),weightsHash(retrained.network)) && ...
         model.temperature==retrained.temperature && isequal(report.validation_raw_scores,repeatedReport.validation_raw_scores), ...
         'Same-seed one-epoch native CPU retraining changed learned weights or calibrated evidence.');
+    path=[tempname '.mat'];portableCleanup=onCleanup(@() delete(path));
+    eba.saveModel(path,model);portable=load(path,'model');
+    [p2,c2,q2,s2]=eba.rawPredict(portable.model,{x;2*x});
+    assert(isequal(p,p2) && isequal(c,c2) && isequal(q,q2) && isequal(s,s2),'Portable raw model changed inference.');
+    clear portableCleanup
     fprintf('RAW_ONE_EPOCH_RETRAINING_EQUALITY_PASS kind=%s\n',kind);
     fprintf('RAW_ONE_EPOCH_TRAINED kind=%s parameters=%d iterations=%d seconds=%.6g\n',kind,a.learnable_parameters,report.iterations_completed,report.training_time_s);
 end

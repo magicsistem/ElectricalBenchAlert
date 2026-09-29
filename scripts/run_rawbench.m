@@ -11,7 +11,7 @@ F=F(F.class_id<=cfg.primary_class_count & F.split~="test",:);
 familyHash=eba.hash(jsonencode(table2struct(F)));
 sources={'+eba/rawArchitecture.m','+eba/rawTrain.m','+eba/rawPredict.m','scripts/run_rawbench.m', ...
     '+eba/subsetFamilies.m','+eba/families.m','+eba/waveform.m','+eba/noise.m','+eba/record.m', ...
-    '+eba/config.m','+eba/hash.m','+eba/json.m','+eba/metrics.m','+eba/manifest.m'};
+    '+eba/config.m','+eba/hash.m','+eba/json.m','+eba/metrics.m','+eba/manifest.m','+eba/saveModel.m'};
 digests=cellfun(@(p) eba.hash(fullfile(cfg.root,p),'file'),sources,'UniformOutput',false);
 sourceHash=eba.hash(strjoin(digests,'')); configHash=eba.hash(fullfile(cfg.root,'config','research_v2.json'),'file');
 id="raw_development_"+string(familyHash(1:12))+"_"+string(sourceHash(1:12))+"_"+string(configHash(1:12));
@@ -28,7 +28,7 @@ for kind=kinds
         index=index+1; fprintf('RAW_DEVELOPMENT_TRAIN kind=%s seed=%d\n',kind,seed);
         [model,report]=eba.rawTrain(F,cfg,kind,seed);
         stem=lower(kind)+"_seed"+seed;
-        modelPath=fullfile(folder,char(stem+"_model.mat")); save(modelPath,'model','-v7');
+        modelPath=fullfile(folder,char(stem+"_model.mat")); eba.saveModel(modelPath,model);stored=dir(modelPath);report.model_serialized_bytes=stored.bytes;
         resultPath=fullfile(folder,char(stem+"_results.mat")); save(resultPath,'report','-v7');
         reportPath=fullfile(folder,char(stem+"_report.json")); eba.json(reportPath,report);
         predictionPath=fullfile(folder,char(stem+"_validation_predictions.csv"));

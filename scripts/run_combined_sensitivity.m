@@ -22,7 +22,7 @@ for m=1:5
         [after,c2,p2,scoresAfter]=eba.predict(model,X(val,:));
         assert(isequal(before,after) && isequal(c1,c2) && isequal(p1,p2) && isequal(scoresBefore,scoresAfter),'eba:CompactionPrediction','Composite compaction changed inference.');
         models{m,k}=model;predictions{m,k}=after;
-        path=fullfile(cfg.output,"combined_model_"+lower(model.method)+"_"+lower(model.kind)+".mat");save(path,'model','-v7.3');artifacts(end+1)=path; %#ok<AGROW>
+        path=fullfile(cfg.output,"combined_model_"+lower(model.method)+"_"+lower(model.kind)+".mat");eba.saveModel(path,model);artifacts(end+1)=path; %#ok<AGROW>
         fprintf('COMBINED_SENSITIVITY_TRAINED method=%s classifier=%s classes=12 fit_families=%d\n',model.method,model.kind,numel(model.training_family_ids));
     end
 end

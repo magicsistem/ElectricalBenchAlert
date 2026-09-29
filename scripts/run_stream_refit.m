@@ -33,7 +33,7 @@ for m=1:numel(R.retained)
     model.model_version="stream-full-development-"+lower(parent.method)+"-"+parent.window_cycles;
     model.training_family_ids=unique(P.family_id(fit));model.calibration_family_ids=unique(P.family_id(calibration));
     model.training_dataset_hash=info.family_hash;model.training_git_commit=strtrim(sha);
-    modelPath=fullfile(folder,"full_"+lower(model.method)+".mat");save(modelPath,'model','-v7.3');
+    modelPath=fullfile(folder,"full_"+lower(model.method)+".mat");eba.saveModel(modelPath,model);
     settings=chosen.settings;settings.model_version=model.model_version;settings.git_commit=strtrim(sha);
     predictions=cell(size(schedules));
     for i=1:numel(schedules)

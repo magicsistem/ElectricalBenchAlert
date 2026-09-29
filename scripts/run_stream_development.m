@@ -47,7 +47,7 @@ if any(string(stage)==["all","windows"])
             rows{m,w}=table(methods(m),cycles,N,metrics.macro_f1,median(info.feature_time_s),height(small),sum(fit), ...
                 'VariableNames',{'method','window_cycles','window_samples','validation_window_macro_f1','feature_median_s','n_families','n_fit_windows'});
             models{m,w}=model;candidate_row=rows{m,w};candidate_signature=signature;
-            save(modelPath,'model','candidate_row','candidate_signature','-v7.3');
+            eba.saveModel(modelPath,model);save(modelPath,'candidate_row','candidate_signature','-append');
             fprintf('STREAM_WINDOW_TRAIN %s cycles=%d validation_window_MacroF1=%.6f\n',methods(m),cycles,metrics.macro_f1);
         end
     end
