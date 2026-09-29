@@ -7,6 +7,16 @@ acceptance=readtable(fullfile(cfg.output,'development_size_acceptance.csv'));
 assert(height(acceptance)==5 && all(acceptance.accepted),'eba:DatasetAcceptance','All declared sample-size gates must pass.');
 verification=jsondecode(fileread(fullfile(cfg.output,'release_development_checks.json')));
 assert(verification.all_tests_passed && strcmp(verification.git_commit,sha),'eba:FreezeChecks','Current clean source must pass native development checks.');
+verificationManifestPath=fullfile(cfg.output,'manifests','release_development_checks.json');
+V=jsondecode(fileread(verificationManifestPath));
+assert(V.repository_state_clean && strcmp(V.git_commit,sha) && ...
+    strcmp(V.config_hash,eba.hash(fullfile(cfg.root,'config','research_v2.json'),'file')), ...
+    'eba:FreezeChecks','Native development verification provenance differs from current source.');
+for i=1:numel(V.artifacts)
+    item=V.artifacts(i);assert(strcmp(eba.hash(fullfile(cfg.root,item.path),'file'),item.sha256), ...
+        'eba:FreezeChecks','Native verification report or its dataset inputs changed.');
+end
+
 methods=["FFT","STFT","DWT","CWT","ST"];kinds=["SVM","RF"];
 % A returned ECOC object is insufficient; require native convergence and exact parent identity.
 auditFiles=dir(fullfile(cfg.output,'manifests','native_solver_audit_*.json'));auditEvidence=strings(0,1);
@@ -139,7 +149,8 @@ software=ver;requiredNames=["Signal Processing Toolbox","Wavelet Toolbox","Stati
 toolboxes=software(ismember(string({software.Name}),requiredNames));assert(numel(toolboxes)==4);
 evidenceFiles=["development_learning.csv","development_size_acceptance.csv","development_transform_selection.csv", ...
     "validation_svm_metrics.csv","validation_svm_statistics.mat","validation_rf_metrics.csv","frozen_validation_pareto.csv","release_development_checks.json", ...
-    "deployment_model_compaction.csv","manifests/development_classifiers.json","manifests/deployment_model_compaction.json"];
+    "deployment_model_compaction.csv","manifests/development_classifiers.json","manifests/deployment_model_compaction.json", ...
+    "manifests/release_development_checks.json"];
 writetable(pareto,fullfile(cfg.output,'frozen_validation_pareto.csv'));
 for i=1:numel(evidenceFiles),bound(end+1)=binding(fullfile(cfg.output,evidenceFiles(i)),'evidence',cfg);end %#ok<AGROW>
 for i=1:numel(auditEvidence),bound(end+1)=binding(auditEvidence(i),'evidence',cfg);end %#ok<AGROW>

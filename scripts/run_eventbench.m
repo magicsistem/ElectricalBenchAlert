@@ -4,6 +4,10 @@ cfg=eba.config();freeze=eba.requireFrozen(cfg,'begin');cleanup=onCleanup(@() eba
 assert(isfield(freeze,'offline_models') && isfield(freeze,'raw_models') && isfield(freeze,'combined_models'), ...
     'eba:TestFirewall','All frozen offline model paths must be declared before test.');
 F=eba.families(cfg.families_per_cell,cfg);test=F(F.split=="test" & F.class_id<=cfg.primary_class_count,:);
+bindings=freeze.bound_files;catalogIndex=find(string({bindings.role})=="dataset" & endsWith(string({bindings.path}),'/records.csv'));
+assert(isscalar(catalogIndex),'eba:FrozenRecords','Exactly one waveform catalog must be hash bound.');
+catalog=readtable(fullfile(cfg.root,bindings(catalogIndex).path),'TextType','string');
+
 stamp=string(datetime('now','TimeZone','UTC','Format',"yyyyMMdd'T'HHmmssSSS"));
 folder=fullfile(cfg.output,"final_eventbench_"+stamp);assert(~isfolder(folder),'eba:FinalImmutable','Final outputs must be append-only.');mkdir(folder);
 artifacts=strings(0,1);modelSpecs=cell(0,1);allMetadata=[];predictions=cell(5,2);methods=["FFT","STFT","DWT","CWT","ST"];
@@ -17,6 +21,7 @@ for m=1:numel(methods)
             'parameters',model.parameters,'hyperparameters',model.hyperparameters,'path',freeze.offline_models(entry).path); %#ok<AGROW>
         assert(model.method==methods(m) && model.kind==kind && model.calibrated,'eba:FrozenModel','Frozen offline model identity differs.');
         [X,P]=eba.extract(test,model.method,model.parameters,cfg,'final');
+        verifyCanonicalRecords(P,catalog);
         if isempty(allMetadata),allMetadata=P;else,assert(isequal(allMetadata,P),'eba:PairedRecords','Final representations received different records.');end
         [pred,confidence]=eba.predict(model,X);predictions{m,k}=pred;
         tableOut=P;tableOut.predicted_class_id=pred;tableOut.confidence=confidence;
@@ -45,7 +50,8 @@ for r=1:numel(rawNames)
         rows=first:min(first+63,height(out));waves=cell(numel(rows),1);
         for j=1:numel(rows)
             index=find(test.family_id==out.family_id(rows(j)));assert(numel(index)==1);
-            waves{j}=eba.record(test(index,:),out.SNR_db(rows(j)),max(1,out.realization_id(rows(j))),cfg,'final');
+            [waves{j},meta]=eba.record(test(index,:),out.SNR_db(rows(j)),max(1,out.realization_id(rows(j))),cfg,'final');
+            assert(string(meta.waveform_sha256)==out.waveform_sha256(rows(j)),'eba:FrozenRecords','Raw and DSP tracks must receive the same catalog-verified waveform.');
         end
         [pred,confidence]=eba.rawPredict(model,waves);out.predicted_class_id(rows)=pred;out.confidence(rows)=confidence;
     end
@@ -67,6 +73,7 @@ for m=1:numel(methods)
         modelSpecs{end+1}=struct('track','secondary_twelve_closed_classes','method',model.method,'classifier',model.kind, ...
             'parameters',model.parameters,'hyperparameters',model.hyperparameters,'path',freeze.combined_models(entry).path); %#ok<AGROW>
         [X,P]=eba.extract(combinedTest,model.method,model.parameters,cfg,'final');
+        verifyCanonicalRecords(P,catalog);
         if isempty(combinedMetadata),combinedMetadata=P;else,assert(isequal(combinedMetadata,P),'eba:PairedRecords','Closed-composite records differ.');end
         [pred,confidence]=eba.predict(model,X);combinedPredictions{m,k}=pred;
         out=P;out.predicted_class_id=pred;out.confidence=confidence;
@@ -99,4 +106,21 @@ paths=[fullfile(folder,prefix+"_metrics.csv");fullfile(folder,prefix+"_paired.cs
     fullfile(folder,prefix+"_per_class.csv")];
 writetable(summary,paths(1));writetable(pairs,paths(2));writetable(noise,paths(3));
 save(paths(4),'summary','pairs','noise','details','-v7.3');writetable(details.per_class_recall,paths(5));
+end
+
+function verifyCanonicalRecords(P,catalog)
+% Byte identities precede frozen model responses; CSV SNR rounding is explicitly tolerated.
+fields={'family_id','split','class_id','requested_snr_db','realization_id','waveform_sha256'};
+assert(isequaln(P.SNR_db,P.requested_snr_db),'eba:FrozenRecords','Reported SNR conditions differ from the declared physical noise levels.');
+assert(numel(unique(P.record_id))==height(P) && numel(unique(catalog.record_id))==height(catalog), ...
+    'eba:FrozenRecords','Record identities must be unique.');
+[found,index]=ismember(P.record_id,catalog.record_id);
+assert(all(found) && isequaln(P(:,fields),catalog(index,fields)), ...
+    'eba:FrozenRecords','Evaluated physical records differ from the frozen canonical waveform identities.');
+assert(all(isfinite(P.measured_snr_db) | P.measured_snr_db==Inf) && ...
+    isequaln(isinf(P.measured_snr_db),isinf(catalog.measured_snr_db(index))), ...
+    'eba:FrozenRecords','Clean/noisy power metadata differs.');
+noisy=isfinite(P.measured_snr_db);difference=abs(P.measured_snr_db(noisy)-catalog.measured_snr_db(index(noisy)));
+assert(all(difference<1e-12) && all(isfinite(P.measured_snr_db(noisy))), ...
+    'eba:FrozenRecords','Measured SNR differs beyond native CSV roundoff.');
 end
