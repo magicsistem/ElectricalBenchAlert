@@ -3,7 +3,7 @@ function report=run_solver_audit(methods,binaryLimit)
 % Equality is measured; a rerun is never presumed to certify the saved parent model.
 cfg=eba.config();if nargin<1,methods=["FFT","STFT","DWT","CWT","ST"];end
 if nargin<2,binaryLimit=Inf;end
-methods=string(methods(:));assert(all(ismember(methods,["FFT","STFT","DWT","CWT","ST"])) && numel(unique(methods))==numel(methods));
+methods=string(methods);methods=methods(:);assert(all(ismember(methods,["FFT","STFT","DWT","CWT","ST"])) && numel(unique(methods))==numel(methods));
 assert(isscalar(binaryLimit) && binaryLimit>=1 && (binaryLimit==Inf || binaryLimit==fix(binaryLimit)));
 rows=cell(0,1);diagnostics=cell(numel(methods),1);artifacts=strings(0,1);hyperparameters=cell(numel(methods),1);
 for m=1:numel(methods)
