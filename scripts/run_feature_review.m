@@ -28,6 +28,7 @@ end
 summary=vertcat(rows{:});path=fullfile(cfg.output,'feature_review_summary.csv');writetable(summary,path);
 artifacts(end+1)=path;
 eba.manifest('development_feature_review',cfg,struct('scope','fitting families only; descriptive diagnostics without feature selection', ...
+    'methods',S.methods,'parameters',{S.selected},'classifier','not_applicable', ...
     'dataset_hash',info.family_hash,'split_hash',eba.hash(jsonencode(table2struct(F(:,{'family_id','split'}))))),artifacts);
 fprintf('FEATURE_REVIEW_COMPLETE methods=%d test_accessed=0\n',numel(S.methods));
 end

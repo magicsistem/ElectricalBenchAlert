@@ -4,7 +4,7 @@ if nargin<1,stage="clips";end
 stage=string(stage);assert(any(stage==["clips","nominal_noise"]),'eba:SensitivityStage','Unknown sensitivity experiment.');
 cfg=eba.config();F=eba.families(cfg.families_per_cell,cfg);F=F(F.split~="test" & F.class_id<=cfg.primary_class_count,:);
 S=load(fullfile(cfg.output,'development_transform_selection.mat'),'selected','methods');
-D=load(fullfile(cfg.output,'development_classifiers.mat'),'models');
+D=load(fullfile(cfg.output,'development_classifiers.mat'),'models','validationP','predictions');
 statCfg=cfg;statCfg.classes=cfg.classes(1:cfg.primary_class_count);artifacts=strings(0,1);
 if stage=="clips"
     [families,cal]=eba.subsetFamilies(F,3,1);lengths=[.2 .5 1];parameterGrid=cell(5,3);inputFamilies=families;predictions=[];names=strings(0,1);validation=[];rows=cell(5,3);
@@ -30,22 +30,40 @@ if stage=="clips"
     coverage=vertcat(rows{:});coveragePath=fullfile(cfg.output,'sensitivity_clip_coverage.csv');writetable(coverage,coveragePath);artifacts(end+1)=coveragePath;
     limitation='Oracle event-centred offline crops ensure target visibility; shorter clips can truncate physical support. This is conditional EventBench sensitivity and cannot select online timing.';
 else
-    valFamilies=F(F.split=="validation",:);inputFamilies=valFamilies;parameterGrid=S.selected;predictions=[];validation=[];
+    valFamilies=F(F.split=="validation",:);inputFamilies=valFamilies;parameterGrid=S.selected;predictions=[];validation=[];names=strings(1,10);
     for m=1:5
         [X,P]=nominalFeatures(valFamilies,S.methods(m),S.selected{m},cfg);
+        [found,index]=ismember(P.record_id,D.validationP.record_id);
+        fields={'record_id','family_id','class_id','SNR_db','realization_id'};
+        assert(all(found) && isequaln(P(:,fields),D.validationP(index,fields)) && ...
+            isequal(P.reference_waveform_sha256,D.validationP.waveform_sha256(index)), ...
+            'eba:PairedRecords','Reference predictions must match regenerated family/condition/waveform identities.');
         if isempty(validation),validation=P;else,assert(isequal(validation,P),'eba:PairedRecords','Noise-reference sensitivity lost pairing.');end
-        predictions(:,m)=eba.predict(D.models{m,1},X); %#ok<AGROW>
+        reference=D.predictions{m,1}(index);nominal=eba.predict(D.models{m,1},X);
+        assert(isequal(reference(P.SNR_db==Inf),nominal(P.SNR_db==Inf)), ...
+            'eba:NoiseReference','The paired clean controls must be exactly equal.');
+        predictions(:,2*m-1)=reference;predictions(:,2*m)=nominal; %#ok<AGROW>
+        names(2*m-1)=S.methods(m)+"_disturbed_reference";names(2*m)=S.methods(m)+"_nominal_reference";
         fprintf('NOISE_REFERENCE_SENSITIVITY_EVALUATED method=%s families=%d\n',S.methods(m),height(valFamilies));
     end
-    statCfg.comparison_family="nominal_power_noise_secondary_dsp_comparisons";
-    [summary,pairs,noise,details]=eba.familyStats(validation,predictions,S.methods,statCfg);
-    limitation='Models trained with clean disturbed-record power; evaluation noise scaled to undisturbed fundamental RMS power. SNR axes explicitly use requested nominal-reference dB; measured disturbed-record SNR is separate.';
+    statCfg.comparison_family="paired_noise_reference_five_secondary_comparisons";
+    statCfg.planned_comparisons=[(1:2:9)' (2:2:10)'];
+    [summary,pairs,noise,details]=eba.familyStats(validation,predictions,names,statCfg);
+    limitation='Five paired contrasts of fixed models under disturbed-record versus nominal-baseline noise power; identical validation families and clean/20/5 dB realization-1 conditions, each weighted one third. Shared record IDs identify paired conditions; separate waveform hashes identify the two power protocols. The requested dB axis uses each declared reference; measured disturbed-record SNR under nominal noise is stored separately. This cannot be compared directly with the original 19-condition aggregate.';
+end
+inputProtocol=struct('snrs_db',[Inf 20 5],'realization',1,'condition_weights',[1/3 1/3 1/3]);
+if stage=="clips"
+    inputProtocol.lengths_s=lengths;inputProtocol.noise_references=string(cfg.noise_reference);
+else
+    inputProtocol.lengths_s=cfg.clip_duration_s;
+    inputProtocol.noise_references=["clean_disturbed_record_energy","nominal_baseline_rms_power"];
 end
 prefix="sensitivity_"+stage;paths=[fullfile(cfg.output,prefix+"_metrics.csv");fullfile(cfg.output,prefix+"_paired.csv");fullfile(cfg.output,prefix+"_snr.csv");fullfile(cfg.output,prefix+"_statistics.mat")];
 writetable(summary,paths(1));writetable(pairs,paths(2));writetable(noise,paths(3));save(paths(4),'summary','pairs','noise','details','validation','predictions','limitation','-v7.3');artifacts=[artifacts;paths];
 eba.manifest(prefix,cfg,struct('scope','development only; no test access; secondary scientific sensitivity', ...
     'method',stage,'methods',S.methods,'parameters',{parameterGrid}, ...
-    'input_protocol',struct('lengths_s',[.2 .5 1],'snrs_db',[Inf 20 5],'realization',1), ...
+    'input_protocol',inputProtocol, ...
+    'prediction_tracks',names,'source_classifiers_sha256',eba.hash(fullfile(cfg.output,'development_classifiers.mat'),'file'), ...
     'classifier','SVM','hyperparameters',D.models{1,1}.hyperparameters, ...
     'solver_configuration',D.models{1,1}.solver_configuration,'hyperparameter_policy','fixed selected shared core configuration; no additional search', ...
     'dataset_hash',eba.hash(jsonencode(table2struct(inputFamilies))),'split_hash',eba.hash(jsonencode(table2struct(inputFamilies(:,{'family_id','split'})))), ...
@@ -68,16 +86,21 @@ assert(all(isnan(coverage(P.class_id==1))) && all(coverage(P.class_id~=1)>0 & co
 end
 function [X,P]=nominalFeatures(F,method,parameters,cfg)
 X=zeros(height(F)*3,24);P=metadata(height(F)*3);measured=zeros(height(P),1);k=0;
+nominalHashes=strings(height(P),1);referenceHashes=nominalHashes;noiseSeeds=zeros(height(P),1);
 for i=1:height(F)
     for snr=[Inf 20 5]
         k=k+1;[signal,meta]=eba.record(F(i,:),snr,1,cfg,'development','nominal_baseline_rms_power');
         assert(snr==Inf || abs(meta.measured_snr_db-snr)<1e-10,'eba:SNR','Nominal-reference SNR verification failed.');
+        [~,referenceMeta]=eba.record(F(i,:),snr,1,cfg,'development','clean_disturbed_record_energy');
+        assert(referenceMeta.noise_seed==meta.noise_seed,'eba:NoiseReference','Paired reference powers must share noise realization seeds.');
+        nominalHashes(k)=string(meta.waveform_sha256);referenceHashes(k)=string(referenceMeta.waveform_sha256);noiseSeeds(k)=meta.noise_seed;
         measured(k)=meta.measured_disturbed_record_snr_db;
         X(k,:)=eba.features(signal,cfg.Fs,method,parameters);P(k,:)={F.family_id(i),F.split(i),F.class_id(i),snr,double(isfinite(snr))};
     end
 end
 P.record_id=canonicalIDs(P);
-P.measured_disturbed_record_snr_db=measured;
+P.measured_disturbed_record_snr_db=measured;P.nominal_waveform_sha256=nominalHashes;
+P.reference_waveform_sha256=referenceHashes;P.noise_seed=noiseSeeds;
 end
 function P=metadata(n)
 P=table('Size',[n 5],'VariableTypes',{'string','string','double','double','double'}, ...

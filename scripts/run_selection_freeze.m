@@ -27,15 +27,43 @@ for q=numel(auditFiles):-1:1
     auditEvidence=[string(auditPath);fullfile(cfg.root,files)];break;
 end
 assert(~isempty(auditEvidence),'eba:SolverAuditReview','Complete native numerical certificate is required before test authorization.');
+% Bind the certified full parents to the actual portable inference decisions.
+classifierManifest=fullfile(cfg.output,'manifests','development_classifiers.json');
+compactionManifest=fullfile(cfg.output,'manifests','deployment_model_compaction.json');
+C=jsondecode(fileread(classifierManifest));P=jsondecode(fileread(compactionManifest));
+assert(C.repository_state_clean && P.repository_state_clean && ...
+    strcmp(C.config_hash,eba.hash(fullfile(cfg.root,'config','research_v2.json'),'file')) && ...
+    strcmp(P.config_hash,C.config_hash) && strcmp(P.extra.training_manifest_sha256,eba.hash(classifierManifest,'file')), ...
+    'eba:CompactionSource','Portable decisions must use the current verified training provenance.');
+for manifest={C,P}
+    for j=1:numel(manifest{1}.artifacts)
+        item=manifest{1}.artifacts(j);
+        assert(strcmp(eba.hash(fullfile(cfg.root,item.path),'file'),item.sha256),'eba:CompactionSource','Classifier or portable model artifact changed.');
+    end
+end
+D=load(fullfile(cfg.output,'development_classifiers.mat'),'models');
+preprocessing={'mean','scale','keep','classes','kind','temperature','calibrated','method','parameters','hyperparameters','seed','feature_schema_version','solver_configuration'};
+for a=1:5
+    parent=load(fullfile(cfg.output,"model_"+lower(methods(a))+"_svm.mat"),'model');
+    assert(isequaln(parent.model,D.models{a,1}),'eba:CompactionSource','Certified primary parent differs from the stored training model.');
+    for k=1:2
+        portable=load(fullfile(cfg.output,'deployment_models',"model_"+lower(methods(a))+"_"+lower(kinds(k))+".mat"),'model');
+        assert(isequaln(compact(D.models{a,k}.fitted),portable.model.fitted),'eba:CompactionSource','Portable fitted decisions differ from native compaction.');
+        for field=preprocessing
+            assert(isequaln(D.models{a,k}.(field{1}),portable.model.(field{1})),'eba:CompactionSource','Portable inference preprocessing differs.');
+        end
+    end
+end
+fprintf('CERTIFIED_PORTABLE_DECISION_CHAIN_PASS models=10 primary_binary_learners=180\n');
 S=load(fullfile(cfg.output,'stream_full_development.mat'),'retained','summary');
 classification=readtable(fullfile(cfg.output,'validation_svm_metrics.csv'),'TextType','string');
 noise=load(fullfile(cfg.output,'validation_svm_statistics.mat'),'details');robust=noise.details.robustness_summary;
-rows=cell(0,1);workload="";endpoint="";runtimeCommit="";
+rows=cell(0,1);workload="";endpoint="";runtimeCommit="";runtimeEvidence=strings(0,1);
 for m=1:numel(methods)
     if isempty(S.retained{m}),continue;end
-    path=fullfile(cfg.output,"runtime_stream_"+lower(methods(m))+".json");R=jsondecode(fileread(path));
+    [R,timingFiles]=timingEvidence("runtime_stream_"+lower(methods(m)),cfg,sha);
+    runtimeEvidence=[runtimeEvidence;timingFiles];
     manifest=jsondecode(fileread(fullfile(cfg.output,'manifests',"runtime_stream_"+lower(methods(m))+".json")));
-    assert(manifest.repository_state_clean && strcmp(manifest.git_commit,sha),'eba:RuntimeSource','Final candidate timings require this same clean source commit.');
     if workload=="",workload=string(R.shared_signal_sha256);endpoint=string(R.shared_endpoints_sha256);runtimeCommit=string(manifest.git_commit);
     else,assert(workload==string(R.shared_signal_sha256) && endpoint==string(R.shared_endpoints_sha256) && runtimeCommit==string(manifest.git_commit),'eba:RuntimeWorkload','Stream candidates must share physical signal and decision endpoints.');end
     assert(R.n_repetitions==cfg.runtime_repetitions && R.warmups==cfg.runtime_warmups);
@@ -71,8 +99,8 @@ assert(~isempty(demo),'eba:DemoFeasibility','No declared validation illustration
 classicalWorkload="";offlineModels=struct('method',{},'classifier',{},'path',{});combinedModels=offlineModels;
 for a=1:numel(methods)
     for k=1:2
-        id="runtime_"+lower(methods(a))+"_"+lower(kinds(k));R=jsondecode(fileread(fullfile(cfg.output,id+".json")));
-        M=jsondecode(fileread(fullfile(cfg.output,'manifests',id+".json")));assert(M.repository_state_clean && strcmp(M.git_commit,sha));
+        id="runtime_"+lower(methods(a))+"_"+lower(kinds(k));[R,timingFiles]=timingEvidence(id,cfg,sha);
+        runtimeEvidence=[runtimeEvidence;timingFiles];
         if classicalWorkload=="",classicalWorkload=string(R.workload_sha256);else,assert(classicalWorkload==string(R.workload_sha256));end
         offlineModels(end+1)=struct('method',char(methods(a)),'classifier',char(kinds(k)), ...
             'path',char(fullfile('results','v2','deployment_models',"model_"+lower(methods(a))+"_"+lower(kinds(k))+".mat"))); %#ok<AGROW>
@@ -83,8 +111,8 @@ end
 rawModels=struct('method',{},'seed',{},'path',{});
 for architecture=["CNN","TCN"]
     for seed=[cfg.model_seed cfg.model_seed+1]
-        id="runtime_"+lower(architecture)+"_raw_seed"+seed;R=jsondecode(fileread(fullfile(cfg.output,id+".json")));
-        M=jsondecode(fileread(fullfile(cfg.output,'manifests',id+".json")));assert(M.repository_state_clean && strcmp(M.git_commit,sha) && classicalWorkload==string(R.workload_sha256));
+        id="runtime_"+lower(architecture)+"_raw_seed"+seed;[R,timingFiles]=timingEvidence(id,cfg,sha);
+        runtimeEvidence=[runtimeEvidence;timingFiles];assert(classicalWorkload==string(R.workload_sha256));
         stored=load(fullfile(cfg.root,R.model_path),'model');assert(~stored.model.structural_test_only && stored.model.calibrated);
         rawModels(end+1)=struct('method',char(architecture),'seed',seed,'path',R.model_path); %#ok<AGROW>
     end
@@ -110,10 +138,14 @@ gapCycles=[1 3 12];for i=2:4,options(i).gap_s=gapCycles(i-1)/cfg.nominal_frequen
 software=ver;requiredNames=["Signal Processing Toolbox","Wavelet Toolbox","Statistics and Machine Learning Toolbox","Deep Learning Toolbox"];
 toolboxes=software(ismember(string({software.Name}),requiredNames));assert(numel(toolboxes)==4);
 evidenceFiles=["development_learning.csv","development_size_acceptance.csv","development_transform_selection.csv", ...
-    "validation_svm_metrics.csv","validation_svm_statistics.mat","validation_rf_metrics.csv","frozen_validation_pareto.csv","release_development_checks.json"];
+    "validation_svm_metrics.csv","validation_svm_statistics.mat","validation_rf_metrics.csv","frozen_validation_pareto.csv","release_development_checks.json", ...
+    "deployment_model_compaction.csv","manifests/development_classifiers.json","manifests/deployment_model_compaction.json"];
 writetable(pareto,fullfile(cfg.output,'frozen_validation_pareto.csv'));
 for i=1:numel(evidenceFiles),bound(end+1)=binding(fullfile(cfg.output,evidenceFiles(i)),'evidence',cfg);end %#ok<AGROW>
 for i=1:numel(auditEvidence),bound(end+1)=binding(auditEvidence(i),'evidence',cfg);end %#ok<AGROW>
+for path=unique(runtimeEvidence,'stable').'
+    bound(end+1)=binding(path,'evidence',cfg); %#ok<AGROW>
+end
 freeze=struct('schema_version','1.0.0','experiment_id','eba-v1-confirmed-event','source_commit',sha, ...
     'test_access_authorized',true,'MATLAB_version',version,'required_toolbox_versions',toolboxes,'config_sha256',eba.hash(fullfile(cfg.root,'config','research_v2.json'),'file'), ...
     'dataset_sha256',parameters,'split_sha256',split,'waveform_catalog_sha256',verification.waveform_catalog_sha256,'bound_files',bound, ...
@@ -130,4 +162,20 @@ end
 function f=binding(path,role,cfg)
 assert(isfile(path) && startsWith(path,[cfg.root filesep]));
 f=struct('path',erase(char(path),[cfg.root filesep]),'sha256',eba.hash(path,'file'),'role',role);
+end
+
+function [report,evidence]=timingEvidence(id,cfg,sha)
+reportPath=fullfile(cfg.output,id+".json");manifestPath=fullfile(cfg.output,'manifests',id+".json");
+M=jsondecode(fileread(manifestPath));
+assert(M.repository_state_clean && strcmp(M.git_commit,sha) && ...
+    strcmp(M.config_hash,eba.hash(fullfile(cfg.root,'config','research_v2.json'),'file')), ...
+    'eba:RuntimeSource','Final timings require the same clean source and scientific configuration.');
+paths=string({M.artifacts.path})';
+assert(any(paths==string(erase(reportPath,[cfg.root filesep]))),'eba:RuntimeSource','Timing report is absent from its manifest.');
+for i=1:numel(paths)
+    assert(strcmp(eba.hash(fullfile(cfg.root,paths(i)),'file'),M.artifacts(i).sha256), ...
+        'eba:RuntimeSource','Timing report, observations or input model changed after measurement.');
+end
+report=jsondecode(fileread(reportPath));
+evidence=[string(manifestPath);fullfile(cfg.root,paths(~endsWith(paths,'.mat')))];
 end
