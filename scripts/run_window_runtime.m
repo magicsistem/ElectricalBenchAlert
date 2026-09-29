@@ -17,7 +17,11 @@ ends=round(linspace(firstEnd,schedule.n_samples,cfg.runtime_repetitions));
 assert(all(diff(ends)>0) && model.window_samples<=firstEnd,'eba:RuntimeWorkload','Matched decision endpoints must be valid and unique.');
 for w=1:cfg.runtime_warmups
     idx=ends(1)-model.window_samples+1:ends(1);v=eba.features(x(idx),cfg.Fs,model.method,model.parameters);
-    [label,~]=eba.predict(model,v);eba.severity(x(idx),cfg.classes(label),cfg.Fs);
+    [label,confidence]=eba.predict(model,v);[grade,physical]=eba.severity(x(idx),cfg.classes(label),cfg.Fs);
+    pred=struct('window_start_s',(idx(1)-1)/cfg.Fs,'window_end_s',ends(1)/cfg.Fs, ...
+        'decision_time_s',ends(1)/cfg.Fs,'class_id',label,'confidence',confidence,'severity',grade, ...
+        'voltage_rms_pu_min',physical.voltage_rms_pu_min);
+    eba.stateStep([],pred,settings);
 end
 before=eba.processMemory();state=[];values=zeros(numel(ends),8);phases=strings(numel(ends),1);
 for w=1:numel(ends)

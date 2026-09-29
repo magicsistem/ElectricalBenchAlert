@@ -20,7 +20,7 @@ Nine MATLAB test suites have passed locally. They cover deterministic waveforms,
 - Track A: FFT, STFT, DWT, CWT and band-limited S-Transform, a common 24-feature schema and ECOC SVM; Random Forest sensitivity.
 - Track B: lightweight 1-D CNN and causal TCN on nominal p.u. waveforms, preserving absolute amplitude.
 - Independent unit: family_id; every noise/crop derivative stays in its family's split.
-- Proposed dataset: nine core classes plus three bounded composite classes, 240 families/class initially; the next provisional candidate has 480 families/class. Final size requires development learning curves and confidence intervals.
+- Accepted development design: nine core classes plus three bounded composite classes, 480 independent families/class and 5,760 total. All five DSP methods passed the prospective learning-curve stability and confidence-interval criteria; final freezing remains pending.
 - Final test predictions remain sealed until source, dataset/split, offline models, streaming windows and temporal settings are hash-bound.
 - Endpoint: a phase-continuous simulated signal producing NORMAL → SUSPECTED → CONFIRMED.
 
@@ -36,4 +36,4 @@ matlab -batch "startup; run_development('classifiers')"
 matlab -batch "startup; run_development('learning')"
 ```
 
-Development representation selection and ten DSP/classifier fits have executed in MATLAB. Initial learning curves have executed and rejected the current dataset size for FFT, STFT and DWT under the declared stability and confidence-interval criteria. The expanded candidate has 5,760 independent families and 109,440 derived records; two complete MATLAB regenerations produced an identical binary catalog, with maximum SNR deviation 1.78e-14 dB. Its size is still provisional. Expansion, full raw baselines and final streaming evaluation remain pending; development results do not establish final performance. No MQTT, ESP32, Wokwi, Flutter, transport or application persistence is implemented.
+Development representation selection and ten DSP/classifier fits have executed in MATLAB. Initial learning curves rejected 20 families per joint class/severity/design cell for FFT, STFT and DWT. The expanded 40-family design passed the unchanged criteria for all five methods, using 30 learning points. It has 5,760 independent families and 109,440 derived records; two complete MATLAB regenerations produced an identical binary catalog, with maximum SNR deviation 1.78e-14 dB. All ten native compact inference copies exactly preserved validation labels, confidence and scores on 12,312 records per model. Numerical certification, full raw baselines and final streaming evaluation remain pending; development results do not establish final performance. No MQTT, ESP32, Wokwi, Flutter, transport or application persistence is implemented.
