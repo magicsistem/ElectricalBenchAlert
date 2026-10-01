@@ -7,20 +7,31 @@ protocol=freeze.stream_protocol;assert(protocol.mode=="single_and_grouped" && pr
 F=eba.families(cfg.families_per_cell,cfg);T=F(F.split=="test",:);
 stamp=string(datetime('now','TimeZone','UTC','Format',"yyyyMMdd'T'HHmmssSSS"));
 folder=fullfile(cfg.output,"final_streambench_"+stamp);assert(~isfolder(folder));mkdir(folder);
-levels=[Inf double(protocol.noisy_snr_db(:)')];schedules=cell(0,1);predictions=cell(0,1);artifacts=strings(0,1);
+levels=[Inf double(protocol.noisy_snr_db(:)')];nVariants=1+(numel(levels)-1)*cfg.noise_realizations;
+schedulesByFamily=cell(height(T),nVariants);predictionsByFamily=cell(height(T),nVariants);artifacts=strings(0,1);
+pool=gcp('nocreate');
+if isempty(pool)
+    cluster=parcluster('local');cluster.NumWorkers=8;pool=parpool(cluster,8);
+end
+assert(pool.NumWorkers==8,'eba:StreamWorkers','The frozen test stream requires eight local workers.');
+fprintf('FROZEN_STREAM_PARALLEL_POOL workers=%d\n',pool.NumWorkers);
 % The first recipe gives paired one-event sequences and pure-normal trials for every test family.
-for i=1:height(T)
+parfor i=1:height(T)
+    workerFreeze(cfg);localSchedules=cell(1,nVariants);localPredictions=cell(1,nVariants);q=0;
     for z=1:numel(levels)
         count=cfg.noise_realizations;if z==1,count=1;end
         for r=1:count
             id="test_single_"+T.family_id(i)+"_snr"+levels(z)+"_r"+r;
             schedule=eba.continuousSchedule(T(i,:),cfg,levels(z),id, ...
                 mod(cfg.stream_seed+double(T.family_seed(i)),2^32),"final",r,protocol.schedule_options(1));
-            schedules{end+1,1}=schedule;predictions{end+1,1}=eba.streamPredictions(schedule,model,cfg,fullfile(cfg.root,entry.path),true); %#ok<AGROW>
+            q=q+1;localSchedules{q}=schedule;
+            localPredictions{q}=eba.streamPredictions(schedule,model,cfg,fullfile(cfg.root,entry.path),true);
         end
     end
-    if mod(i,50)==0 || i==height(T),fprintf('FROZEN_STREAM_SINGLE families=%d/%d sequences=%d\n',i,height(T),numel(schedules));end
+    schedulesByFamily(i,:)=localSchedules;predictionsByFamily(i,:)=localPredictions;
+    if mod(i,50)==0 || i==height(T),fprintf('FROZEN_STREAM_SINGLE families=%d/%d\n',i,height(T));end
 end
+schedules=reshape(schedulesByFamily.',[],1);predictions=reshape(predictionsByFamily.',[],1);
 [report,details]=eba.evaluateStreamEvidence(schedules,predictions,settings,cfg);
 path=fullfile(folder,'single_stream_report.json');eba.json(path,report);artifacts(end+1)=path;
 path=fullfile(folder,'single_stream_results.mat');save(path,'report','details','schedules','predictions','-v7.3');artifacts(end+1)=path;
@@ -47,16 +58,19 @@ events=sortrows(T(T.class_id~=1,:),{'duration_stratum','severity_stratum','class
 groups=cell(ceil(height(events)/protocol.group_size),1);
 for g=1:numel(groups),groups{g}=events((g-1)*protocol.group_size+1:min(g*protocol.group_size,height(events)),:);end
 for a=2:numel(protocol.schedule_options)
-    groupedSchedules=cell(numel(groups)*2,1);groupedPredictions=cell(size(groupedSchedules));k=0;
-    for g=1:numel(groups)
+    groupedSchedulesByGroup=cell(numel(groups),2);groupedPredictionsByGroup=cell(numel(groups),2);
+    parfor g=1:numel(groups)
+        workerFreeze(cfg);localSchedules=cell(1,2);localPredictions=cell(1,2);
         for z=1:2
-            pairedLevels=[Inf double(protocol.group_noisy_snr_db)];k=k+1;id="test_group_"+g+"_spacing"+a+"_snr"+pairedLevels(z);
+            pairedLevels=[Inf double(protocol.group_noisy_snr_db)];id="test_group_"+g+"_spacing"+a+"_snr"+pairedLevels(z);
             schedule=eba.continuousSchedule(groups{g},cfg,pairedLevels(z),id,cfg.stream_seed+100000+g, ...
                 "final",1,protocol.schedule_options(a));
-            groupedSchedules{k}=schedule;groupedPredictions{k}=eba.streamPredictions(schedule,model,cfg,fullfile(cfg.root,entry.path),true);
+            localSchedules{z}=schedule;localPredictions{z}=eba.streamPredictions(schedule,model,cfg,fullfile(cfg.root,entry.path),true);
         end
+        groupedSchedulesByGroup(g,:)=localSchedules;groupedPredictionsByGroup(g,:)=localPredictions;
         if mod(g,30)==0 || g==numel(groups),fprintf('FROZEN_STREAM_GROUP spacing=%d groups=%d/%d\n',a,g,numel(groups));end
     end
+    groupedSchedules=reshape(groupedSchedulesByGroup.',[],1);groupedPredictions=reshape(groupedPredictionsByGroup.',[],1);
     [groupedReport,groupedDetails]=eba.evaluateStreamEvidence(groupedSchedules,groupedPredictions,settings,cfg);
     path=fullfile(folder,"group_spacing_"+a+".json");eba.json(path,groupedReport);artifacts(end+1)=path; %#ok<AGROW>
     path=fullfile(folder,"group_spacing_"+a+".mat");save(path,'groupedReport','groupedDetails','groupedSchedules','groupedPredictions','-v7.3');artifacts(end+1)=path; %#ok<AGROW>
@@ -69,4 +83,9 @@ eba.requireFrozen(cfg,'end');eba.manifest('final_streambench',cfg,struct('scope'
     'model_path',entry.path,'state_settings',settings,'stream_protocol',protocol, ...
     'freeze_sha256',eba.hash(fullfile(cfg.root,'FROZEN_EXPERIMENT.json'),'file')),artifacts);
 fprintf('FROZEN_STREAMBENCH_PASS families=%d single_sequences=%d false_alarms=%d fitting_calls=0\n',height(T),report.n_sequences,report.false_alarms);
+end
+
+function workerFreeze(cfg)
+persistent initialized
+if isempty(initialized),eba.requireFrozen(cfg,'begin');initialized=true;else,eba.requireFrozen(cfg,'verify');end
 end
