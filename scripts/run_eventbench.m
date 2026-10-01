@@ -33,7 +33,7 @@ statCfg=cfg;statCfg.classes=cfg.classes(1:cfg.primary_class_count);tracks=cell(2
 for k=1:2
     kinds=["SVM","RF"];kind=kinds(k);statCfg.comparison_family="frozen_final_dsp_"+lower(kind);
     [summary,pairs,noise,details]=eba.familyStats(allMetadata,horzcat(predictions{:,k}),methods,statCfg);tracks{k}=summary;
-    artifacts=[artifacts;writeStatistics(folder,"dsp_"+lower(kind),summary,pairs,noise,details)]; %#ok<AGROW>
+    artifacts=vertcat(artifacts(:),writeStatistics(folder,"dsp_"+lower(kind),summary,pairs,noise,details)); %#ok<AGROW>
 end
 % Raw architectures/seeds are separately identified; seeds are never counted as families.
 rawNames=strings(numel(freeze.raw_models),1);rawPredictions=zeros(height(allMetadata),numel(rawNames));
@@ -61,7 +61,7 @@ for r=1:numel(rawNames)
 end
 statCfg.comparison_family="frozen_raw_seed_sensitivity";statCfg.planned_comparisons=nchoosek(1:numel(rawNames),2);
 [rawSummary,rawPairs,rawNoise,rawDetails]=eba.familyStats(allMetadata,rawPredictions,rawNames,statCfg);
-artifacts=[artifacts;writeStatistics(folder,"raw",rawSummary,rawPairs,rawNoise,rawDetails)];
+artifacts=vertcat(artifacts(:),writeStatistics(folder,"raw",rawSummary,rawPairs,rawNoise,rawDetails));
 % Closed-composite sensitivity has a different twelve-class estimand and its own comparisons.
 combinedTest=F(F.split=="test",:);combinedPredictions=cell(5,2);combinedMetadata=[];
 for m=1:numel(methods)
@@ -84,7 +84,7 @@ combinedTracks=cell(2,1);statCfg=cfg;
 for k=1:2
     kinds=["SVM","RF"];kind=kinds(k);statCfg.comparison_family="frozen_closed_composite_"+lower(kind)+"_secondary";
     [summary,pairs,noise,details]=eba.familyStats(combinedMetadata,horzcat(combinedPredictions{:,k}),methods,statCfg);combinedTracks{k}=summary;
-    artifacts=[artifacts;writeStatistics(folder,"closed_composite_"+lower(kind),summary,pairs,noise,details)]; %#ok<AGROW>
+    artifacts=vertcat(artifacts(:),writeStatistics(folder,"closed_composite_"+lower(kind),summary,pairs,noise,details)); %#ok<AGROW>
 end
 report=struct('experiment_id',freeze.experiment_id,'freeze_sha256',eba.hash(fullfile(cfg.root,'FROZEN_EXPERIMENT.json'),'file'), ...
     'test_families',height(test),'test_records',height(allMetadata),'dsp_svm',table2struct(tracks{1}), ...
