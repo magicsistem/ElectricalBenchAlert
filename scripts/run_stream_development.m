@@ -65,7 +65,15 @@ if any(string(stage)==["all","state"])
     pool=gcp('nocreate');
     if isempty(pool)
         localCluster=parcluster('local');
-        parpool(localCluster,min(6,localCluster.NumWorkers));
+        requestedWorkers=8;
+        try
+            localCluster.NumWorkers=requestedWorkers;
+            pool=parpool(localCluster,requestedWorkers);
+        catch
+            fallbackWorkers=min(4,localCluster.NumWorkers);
+            pool=parpool(localCluster,fallbackWorkers);
+        end
+        fprintf('STREAM_PARALLEL_POOL workers=%d requested=%d\n',pool.NumWorkers,requestedWorkers);
     end
     W=load(fullfile(cfg.output,'stream_window_development.mat'),'models');
     % Prospective engineering grid: confidence x consecutive count; one-cycle union-support floor.
