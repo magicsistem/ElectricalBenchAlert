@@ -67,7 +67,7 @@ for m=1:numel(S.candidates)
         model.method,choice.recovery_windows,choice.refractory_cycles,choice.event_f1);
 end
 assert(any(~cellfun(@isempty,retained)),'eba:StreamFeasibility','No representation passed hierarchical validation refinement.');
-summary=vertcat(rows{:});paths=[fullfile(cfg.output,'state_refinement.csv');fullfile(cfg.output,'state_refinement.mat')];
+summary=vertcat(rows{:});paths=[string(fullfile(cfg.output,'state_refinement.csv'));string(fullfile(cfg.output,'state_refinement.mat'))];
 writetable(summary,paths(1));save(paths(2),'summary','retained','schedules','-v7.3');
 eba.manifest('state_refinement',cfg,struct('scope','validation only; hierarchical fixed-budget engineering search', ...
     'methods',string(cellfun(@(q) q.model.method,S.candidates(~cellfun(@isempty,S.candidates)),'UniformOutput',false)), ...
