@@ -62,6 +62,11 @@ if any(string(stage)==["all","windows"])
         [string(fullfile(cfg.output,'stream_window_development.mat'));string(fullfile(cfg.output,'stream_window_development.csv'));candidatePaths(:)]);
 end
 if any(string(stage)==["all","state"])
+    pool=gcp('nocreate');
+    if isempty(pool)
+        localCluster=parcluster('local');
+        parpool(localCluster,min(6,localCluster.NumWorkers));
+    end
     W=load(fullfile(cfg.output,'stream_window_development.mat'),'models');
     % Prospective engineering grid: confidence x consecutive count; one-cycle union-support floor.
     [~,sha]=system('git rev-parse HEAD');settings=struct('threshold_on',.7,'threshold_off',.5,'min_windows',2, ...
@@ -75,9 +80,11 @@ if any(string(stage)==["all","state"])
             minimumHop=max(1,round(base.window_samples*min(cfg.stream_hop_fractions)));
             fineModel=base;fineModel.hop_samples=minimumHop;
             finePredictions=cell(size(schedules));
-            for i=1:height(validation)
-                for z=1:2,finePredictions{i,z}=eba.streamPredictions(schedules{i,z},fineModel,statCfg, ...
+            parfor i=1:height(validation)
+                row=cell(1,2);
+                for z=1:2,row{z}=eba.streamPredictions(schedules{i,z},fineModel,statCfg, ...
                     fullfile(modelFolder,"candidate_"+lower(base.method)+"_"+base.window_cycles+".mat"),true);end
+                finePredictions(i,:)=row;
             end
             for hopFraction=cfg.stream_hop_fractions(:).'
                 model=base;model.hop_samples=max(1,round(model.window_samples*hopFraction));
