@@ -2,13 +2,19 @@
 
 MATLAB research pipeline for synthetic 60 Hz electrical disturbance classification and continuous event confirmation.
 
-## Model selection status
+## Validation-selected models
 
-There is not yet a defensible final continuous-detector winner. The offline DSP SVM comparison and the continuous event detector answer different questions, so the repository now records their leaders separately. The observed offline SVM leader is FFT (nine-class validation Macro F1 **0.579**, 95% family interval **0.560–0.597**). The continuous selection must use complete validation and matched-runtime results from every feasible refined candidate.
+The corrected, validation-only comparison selects **STFT + SVM ECOC** for both the primary offline DSP track and the continuous stream track. Selection covered all five offline representations and all three refined RTF-feasible continuous candidates; test was not accessed.
 
-The previous freeze path read a legacy full-stream file that contained only DWT and could therefore treat “only result present” as “best.” It also omitted offline-only methods from the comparison table. The corrected path reads the newer `reselection` artifacts, checks candidate coverage, preserves all five offline SVM rows, and marks offline and stream selections separately. Current refinement retained FFT, STFT, and DWT as compute-feasible; ST and CWT did not meet the p95 compute/hop bound. Full refit and matched-runtime evaluation of all three candidates must finish before a continuous winner is frozen. Older 0.491 FFT and 0.428 DWT event-F1 summaries use superseded streaming runs and are not current model-selection results.
+| Track | Method | Primary metric | Other validation result |
+|---|---|---:|---|
+| Offline DSP, shared SVM | **STFT** | Macro-F1 0.5915 [0.5710, 0.6114] | Nine primary classes; family-cluster 95% CI |
+| Continuous events | **STFT**, 30-cycle window, 7.5-cycle hop | Event F1 0.5656 [0.5421, 0.5891] | Recall 0.5150; false alarms 2.5605/min [2.2884, 2.8678]; matched latency 0.5560 s |
+| Matched runtime | STFT | p95 RTF 0.1509 | 100 decisions, two warmups, fresh MATLAB session |
 
-The detector must report event F1, recall/miss rate, false alarms per normal minute and normal-family alarm incidence with uncertainty. A single deterministic `NORMAL → SUSPECTED → CONFIRMED` demo proves state transitions only; it does not establish model quality or operational suitability.
+FFT has lower event F1 (0.4913) and higher false-alarm rate (6.1118/min); DWT has lower event F1 (0.5236), lower false alarms (2.0526/min), and faster RTF (0.0946). All three are Pareto candidates, so the stated rule selects the highest Event F1 and reports the tradeoffs. The old DWT-only choice came from a legacy full-stream artifact that omitted the other methods; the selector now fails on incomplete candidate coverage and reports offline and stream leaders separately.
+
+STFT is the best candidate in this finite validation search, **not an operationally acceptable detector**: all 72 pure-normal validation families had at least one alarm. A deterministic sag demo reaches `NORMAL → SUSPECTED → CONFIRMED` in 0.5165 s with three supporting windows and no preceding false alarms; the demo illustrates the transition and does not estimate generalization. The earlier test split was already inspected under the superseded protocol; a new untouched test is required before confirmatory claims or v1.0.0.
 
 An illustrative validation sag deterministically reaches `NORMAL → SUSPECTED → CONFIRMED`. The output confidence is a calibrated minimum supporting-window score, not an event probability. The demo stops at confirmation, so the event end is right-censored.
 
@@ -23,9 +29,9 @@ matlab -batch "disp(version); ver"
 matlab -batch "startup; run_all_tests"
 ```
 
-The current local MATLAB run passed all nine suites, including a positive control and a negative control for incomplete candidate coverage. A clean clone does not contain the ignored dataset/model artifacts required for full-benchmark or confirmed-demo reproduction; this release candidate is not tagged `v1.0.0`.
+The current local MATLAB run passed all nine suites, including positive/negative candidate-selection controls. A clean clone does not contain the ignored dataset/model artifacts required for full reproduction; this release candidate is not tagged `v1.0.0`.
 
-The research artifacts and fitted models are generated under ignored `results/` and `data/generated/` paths and are not bundled in this source checkout. This is a release candidate, not a clean-clone v1.0.0 release: full reproduction currently needs those MATLAB artifacts, and the earlier test split was already inspected. Do not use `FROZEN_EXPERIMENT.json` to authorize confirmatory test access for the corrected FFT selection; it binds the superseded DWT protocol. The local full report records the exact validation manifests and the required conditions for a future independent release.
+The research artifacts and fitted models are generated under ignored `results/` and `data/generated/` paths and are not bundled in this source checkout. This is a release candidate, not a clean-clone v1.0.0 release: full reproduction currently needs those MATLAB artifacts, and the earlier test split was already inspected. Do not use `FROZEN_EXPERIMENT.json` to authorize confirmatory test access for the corrected STFT selection; it binds the superseded DWT protocol. The local full report records the exact validation manifests and the required conditions for a future independent release.
 
 The local Spanish final report is `local_docs/FINAL_REPORT.md`; raw MATLAB outputs and figures are under `results/v2/`.
 
