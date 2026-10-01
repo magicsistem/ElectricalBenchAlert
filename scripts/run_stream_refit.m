@@ -42,9 +42,9 @@ for m=1:numel(R.retained)
     modelPath=fullfile(folder,"full_"+lower(model.method)+".mat");eba.saveModel(modelPath,model);
     settings=chosen.settings;settings.model_version=model.model_version;settings.git_commit=strtrim(sha);
     predictions=cell(size(schedules));
-    for i=1:numel(schedules)
+    parfor i=1:numel(schedules)
         predictions{i}=eba.streamPredictions(schedules{i},model,cfg,modelPath,true);
-        if mod(i,100)==0 || i==numel(schedules),fprintf('FULL_STREAM_VALIDATION %s sequences=%d/%d\n',model.method,i,numel(schedules));end
+        if mod(i,500)==0 || i==numel(schedules),fprintf('FULL_STREAM_VALIDATION %s sequence_index=%d/%d\n',model.method,i,numel(schedules));end
     end
     [report,detail]=eba.evaluateStreamEvidence(schedules,predictions,settings,cfg);
     % Full validation is a gate. Failed feasibility returns to development before opening test.
