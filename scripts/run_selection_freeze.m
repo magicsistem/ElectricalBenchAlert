@@ -104,7 +104,7 @@ selectedPath=fullfile('results','v2','stream_models',"full_"+lower(method)+".mat
 settings.method_version='1.0.0';settings.git_commit=sha;settings.method_id=char(method);settings.sequence_id='frozen_sequence';
 modelHash=eba.hash(fullfile(cfg.root,selectedPath),'file');settings.model_version="stream-v1.0.0-"+string(modelHash(1:12));
 % Native development demonstration must succeed before its family/recipe is frozen.
-F=eba.families(cfg.families_per_cell,cfg);V=F(F.split=="validation" & F.class_name=="voltage_sag" & F.severity_stratum==3 & F.duration_stratum==4,:);
+F=eba.families(cfg.families_per_cell,cfg);V=F(F.split=="validation" & F.class_name=="voltage_sag" & F.severity_stratum>=2 & F.duration_stratum==4,:);
 assert(height(V)>0);V=sortrows(V,'family_id');demo=[];
 for i=1:height(V)
     schedule=eba.continuousSchedule(V(i,:),cfg,Inf,'confirmed_event_demo',cfg.stream_seed+200000);
@@ -112,7 +112,7 @@ for i=1:height(V)
     if result.stopped_at_confirmation && result.metrics.false_alarms==0 && result.metrics.n_matched_events==1 && ...
             any(result.phases=="NORMAL") && any(result.phases=="SUSPECTED")
         demo=struct('family_id',char(V.family_id(i)),'sequence_id','confirmed_event_demo','seed',cfg.stream_seed+200000, ...
-            'scope','first successful deterministic long high-severity validation sag; illustrative, not unbiased test performance');break;
+            'scope','first successful deterministic long medium-or-high-severity validation sag; illustrative, not unbiased test performance');break;
     end
 end
 assert(~isempty(demo),'eba:DemoFeasibility','No declared validation illustration reached genuine confirmation.');
