@@ -2,6 +2,12 @@ function summary=run_stream_refit()
 %RUN_STREAM_REFIT Full accepted training population, held validation and frozen refined settings.
 cfg=eba.config();acceptance=readtable(fullfile(cfg.output,'development_size_acceptance.csv'));
 assert(height(acceptance)==5 && all(acceptance.accepted),'eba:DatasetAcceptance','All five learning-curve gates must pass before stream refitting.');
+pool=gcp('nocreate');
+if isempty(pool)
+    cluster=parcluster('local');requested=min(8,cluster.NumWorkers);
+    try,pool=parpool(cluster,requested);catch,pool=parpool(cluster,min(4,cluster.NumWorkers));end
+end
+fprintf('STREAM_REFIT_PARALLEL_POOL workers=%d requested_max=8\n',pool.NumWorkers);
 F=eba.families(cfg.families_per_cell,cfg);F=F(F.split~="test",:);
 [~,cal]=eba.subsetFamilies(F,max(cfg.learning_train_families_per_cell),cfg.families_per_cell/20*cfg.split_per_block.validation);
 R=load(fullfile(cfg.output,'state_refinement.mat'),'retained');
