@@ -65,7 +65,11 @@ if any(string(stage)==["all","state"])
     pool=gcp('nocreate');
     if isempty(pool)
         localCluster=parcluster('local');
-        requestedWorkers=8;
+        requestedWorkers=4;
+        overrideWorkers=str2double(getenv('EBA_STREAM_WORKERS'));
+        if isfinite(overrideWorkers) && overrideWorkers>=1
+            requestedWorkers=min(8,round(overrideWorkers));
+        end
         try
             localCluster.NumWorkers=requestedWorkers;
             pool=parpool(localCluster,requestedWorkers);
