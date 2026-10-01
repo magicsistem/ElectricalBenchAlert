@@ -43,8 +43,8 @@ assert(all(pred>=1 & pred<=9) && all(confidence>=0 & confidence<=1) && all(abs(s
 eba.requireCandidateCoverage(["FFT","DWT"],["DWT","FFT"],'positive control');
 rejects(@() eba.requireCandidateCoverage(["FFT","DWT"],"DWT",'missing candidate control'),'eba:CandidateCoverage');
 candidateFixture=table([.50;.65;.40;.99],[.45;.40;.35;.98],[1;2;3;0],[.1;.2;.3;.1],[.1;.2;.3;1.1], ...
-    [true;true;true;false],'VariableNames',{'event_f1','event_f1_ci_low','false_alarms_per_minute', ...
-    'matched_latency_s','stream_RTF_p95','eligible'});
+    [1;100;2;1],[true;true;true;false],'VariableNames',{'event_f1','event_f1_ci_low','false_alarms_per_minute', ...
+    'matched_latency_s','stream_RTF_p95','model_bytes','eligible'});
 [winner,front]=eba.selectStreamCandidate(candidateFixture);assert(winner==1&&front(1)&&front(2)&&~front(3)&&~front(4));
 reliability=eba.calibrationMetrics(model,X(val,:),P.class_id(val));assert(isfinite(reliability.brier) && reliability.ece_10_bins>=0);
 original=eba.config();testRows=eba.families(20,original);testRows=testRows(testRows.split=="test",:);
