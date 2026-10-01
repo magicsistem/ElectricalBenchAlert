@@ -44,7 +44,8 @@ reliability=eba.calibrationMetrics(model,X(val,:),P.class_id(val));assert(isfini
 original=eba.config();testRows=eba.families(20,original);testRows=testRows(testRows.split=="test",:);
 rejects(@() eba.extract(testRows(1,:),'FFT',params,original,'development',Inf,1),'eba:TestFirewall');
 rejects(@() eba.selectClassifier(X,assignTest(P),cfg,'SVM',cal),'eba:TestFirewall');
-rejects(@() eba.requireFrozen(original),'eba:TestFirewall');
+tamperedFreezeCfg=original;tamperedFreezeCfg.Fs=original.Fs+1;
+rejects(@() eba.requireFrozen(tamperedFreezeCfg),'eba:TestFirewall');
 % Row/column method lists agree; worsening curves cannot masquerade as stability.
 learning=table(repelem(["FFT";"STFT"],3),repmat([3;6;9],2,1), ...
     [.5;.505;.509;.8;.6;.4],[.48;.485;.489;.78;.58;.38],[.52;.525;.529;.82;.62;.42], ...

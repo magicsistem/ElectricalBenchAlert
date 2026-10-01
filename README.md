@@ -1,10 +1,16 @@
 # ElectricalBenchAlert
 
-Scientific MATLAB research for electrical disturbance detection. Current status: **development toward v1.0.0**. The confirmed-event milestone has not yet been accepted.
+MATLAB research pipeline for synthetic 60 Hz electrical disturbance classification and continuous event confirmation.
 
-## Requirements and verified checks
+## Selected detector
 
-MATLAB R2026b, Signal Processing Toolbox, Wavelet Toolbox, Statistics and Machine Learning Toolbox and Deep Learning Toolbox. Scientific execution uses local MATLAB; generated data and results are ignored by Git.
+The corrected validation search selects **FFT + SVM ECOC**, 12-cycle window, 6-cycle hop. The previous DWT selection imposed an undocumented cap of one false alarm per minute, excluding higher-F1 candidates. The corrected code retains false alarms, latency, and RTF as Pareto objectives and uses p95 RTF ≤ 1 as the computational feasibility bound. On 864 full-validation families / 6,048 schedules, FFT measured event F1 **0.491** (95% family/sequence-cluster CI 0.473–0.510), recall **0.564**, missed-event rate **0.436**, and **6.112 unmatched confirmations per normal minute** (5.512–6.789). All 72 pure-normal validation families alarmed at least once. It reaches `CONFIRMED` in the deterministic synthetic demo; the measured alarm burden does not support operational use.
+
+An illustrative validation sag deterministically reaches `NORMAL → SUSPECTED → CONFIRMED`. The output confidence is a calibrated minimum supporting-window score, not an event probability. The demo stops at confirmation, so the event end is right-censored.
+
+## Requirements and checks
+
+MATLAB R2026b with Signal Processing Toolbox, Wavelet Toolbox, Statistics and Machine Learning Toolbox, and Deep Learning Toolbox.
 
 ```sh
 git clone https://github.com/magicsistem/ElectricalBenchAlert.git
@@ -13,27 +19,17 @@ matlab -batch "disp(version); ver"
 matlab -batch "startup; run_all_tests"
 ```
 
-Nine MATLAB test suites have passed locally. They cover deterministic waveforms, exact noise power, grouped splits, five transform controls, controlled classifiers, paired family statistics, one-epoch CNN/TCN structural training, runtime controls, continuous processing through confirmation and typed freeze/mutation checks. The integration classifier is a control fixture. Final model selection and independent test evaluation remain pending.
+The current local MATLAB run passed all nine suites. A clean clone does not contain the ignored dataset/model artifacts required for full-benchmark or confirmed-demo reproduction yet; this release candidate is not tagged `v1.0.0`.
+
+The research artifacts and fitted models are generated under ignored `results/` and `data/generated/` paths and are not bundled in this source checkout. This is a release candidate, not a clean-clone v1.0.0 release: full reproduction currently needs those MATLAB artifacts, and the earlier test split was already inspected. Do not use `FROZEN_EXPERIMENT.json` to authorize confirmatory test access for the corrected FFT selection; it binds the superseded DWT protocol. The local full report records the exact validation manifests and the required conditions for a future independent release.
+
+The local Spanish final report is `local_docs/FINAL_REPORT.md`; raw MATLAB outputs and figures are under `results/v2/`.
 
 ## Scientific scope
 
-- Track A: FFT, STFT, DWT, CWT and band-limited S-Transform, a common 24-feature schema and ECOC SVM; Random Forest sensitivity.
-- Track B: lightweight 1-D CNN and causal TCN on nominal p.u. waveforms, preserving absolute amplitude.
-- Independent unit: family_id; every noise/crop derivative stays in its family's split.
-- Accepted development design: nine core classes plus three bounded composite classes, 480 independent families/class and 5,760 total. All five DSP methods passed the prospective learning-curve stability and confidence-interval criteria; final freezing remains pending.
-- Final test predictions remain sealed until source, dataset/split, offline models, streaming windows and temporal settings are hash-bound.
-- Endpoint: a phase-continuous simulated signal producing NORMAL → SUSPECTED → CONFIRMED.
+- Offline DSP comparison: FFT, STFT, DWT, CWT, and band-limited S-Transform with a common feature protocol and controlled SVM; Random Forest is a sensitivity classifier. Separate raw-waveform CNN and TCN baselines are reported.
+- Dataset v2: 5,760 independent scenario families, 109,440 clean/noisy derivatives, nine primary disturbance classes and three declared closed-set composites. All derivatives remain in their family split.
+- Continuous full validation: 864 independent families and 6,048 single-event schedules for the selected detector; separate close-spacing schedules are also measured. The previously inspected test metrics belong to the superseded DWT candidate.
+- Research scope: synthetic event classification and confirmation. The project does not calculate regulatory Pst or claim compliance with Ecuadorian or Peruvian power-quality regulations.
 
-Nine original MAT arrays remain as scientific reference fixtures, with [SHA-256 identities](data/manifests/original_fixtures.json). The original complete 630-record dataset is unavailable. Regeneration uses a separately versioned MATLAB generator and does not claim identity with absent historical records. The temporary Python route and active legacy implementation have been removed; the baseline remains in the v0.1.0 Git tag.
-
-## Development commands
-
-```sh
-matlab -batch "startup; generate_dataset"
-matlab -batch "startup; verify_dataset_records; verify_dataset_records"
-matlab -batch "startup; run_development('representations')"
-matlab -batch "startup; run_development('classifiers')"
-matlab -batch "startup; run_development('learning')"
-```
-
-Development representation selection and ten DSP/classifier fits have executed in MATLAB. Initial learning curves rejected 20 families per joint class/severity/design cell for FFT, STFT and DWT. The expanded 40-family design passed the unchanged criteria for all five methods, using 30 learning points. It has 5,760 independent families and 109,440 derived records; two complete MATLAB regenerations produced an identical binary catalog, with maximum SNR deviation 1.78e-14 dB. All ten native compact inference copies exactly preserved validation labels, confidence and scores on 12,312 records per model. Native numerical auditing found one selected STFT binary that exhausted the default iteration budget. A train-only doubled-budget probe converged at the unchanged tolerance; corrected selection and learning curves are being remeasured. Numerical certification, full raw baselines and final streaming evaluation remain pending; development results do not establish final performance. No MQTT, ESP32, Wokwi, Flutter, transport or application persistence is implemented.
+The historical 630-record waveform set was unavailable; its hashes cannot reconstruct its missing samples. Nine MAT reference fixtures are preserved, and the new MATLAB dataset is a separately generated dataset, not a reconstruction of those absent records. No MQTT, broker, ESP32, Wokwi, Flutter, network transport, or mobile notification layer is included.

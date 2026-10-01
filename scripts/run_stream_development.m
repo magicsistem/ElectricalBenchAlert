@@ -153,12 +153,14 @@ if any(string(stage)==["all","state"])
     selection=vertcat(records{:});
     objectives=[selection.event_f1,-selection.false_alarms_per_minute,-selection.matched_latency_s,-selection.stream_RTF_p95];
     finite=all(isfinite(objectives),2);selection.pareto=false(height(selection),1);selection.pareto(finite)=eba.pareto(objectives(finite,:),ones(1,4));
-    selection.eligible=finite & selection.false_alarms_per_minute<=1 & selection.stream_RTF_p95<=1;
+    % Event F1 penalizes false detections through precision. Keep false alarms
+    % as a Pareto objective; do not impose an undocumented rate cap.
+    selection.eligible=finite & selection.stream_RTF_p95<=1;
     selection.selected_for_refinement=false(height(selection),1);candidates=cell(5,1);
     for m=1:5
         rows=find(selection.method==methods(m) & selection.eligible);
         if isempty(rows),continue;end
-        % Retain one feasible nondominated screening candidate per representation.
+        % Retain the best event-F1 point on the feasible Pareto front per representation.
         front=eba.pareto(objectives(rows,:),ones(1,4));rows=rows(front);
         ranking=[-selection.event_f1(rows),selection.matched_latency_s(rows),rows];
         [~,order]=sortrows(ranking,[1 2 3]);index=rows(order(1));row=selection(index,:);
@@ -176,7 +178,7 @@ if any(string(stage)==["all","state"])
     writetable(selection,fullfile(cfg.output,'stream_state_selection.csv'));
     save(fullfile(cfg.output,'stream_screening_development.mat'),'candidates','selection','-v7.3');
     eba.manifest('stream_validation_selection',cfg,struct('scope','validation only; clean and 20dB paired schedules', ...
-        'selection_rule','one feasible nondominated candidate per representation for refinement; false_alarms/min<=1 and p95 RTF<=1; maximum mean event F1; exact ties minimum matched latency then grid order', ...
+        'selection_rule','one event-F1-maximizing nondominated candidate per representation for refinement; p95 RTF<=1 is the sole feasibility bound; false alarms/minute remain a Pareto objective without a hard cap; ties minimum latency then grid order', ...
         'methods',methods,'classifier','SVM','parameters',{S.selected},'hyperparameters',C.shared{1}, ...
         'n_pure_normal_families',sum(validation.class_id==1),'n_event_families',sum(validation.class_id~=1), ...
         'solver_configuration',W.models{1,1}.solver_configuration,'normal_duration_s',30,'normal_gap_s',2,'n_independent_families',height(validation),'n_noise_derivative_sequences',numel(schedules)), ...
