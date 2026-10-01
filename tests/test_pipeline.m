@@ -40,6 +40,8 @@ cfg.svm_grid.box_constraint=1;cfg.svm_grid.kernel_scale=1;
 assert(model.calibrated && height(search)==2 && model.calibration.n_families==9);
 val=P.split=="validation";[pred,confidence,prob]=eba.predict(model,X(val,:));
 assert(all(pred>=1 & pred<=9) && all(confidence>=0 & confidence<=1) && all(abs(sum(prob,2)-1)<1e-12));
+eba.requireCandidateCoverage(["FFT","DWT"],["DWT","FFT"],'positive control');
+rejects(@() eba.requireCandidateCoverage(["FFT","DWT"],"DWT",'missing candidate control'),'eba:CandidateCoverage');
 reliability=eba.calibrationMetrics(model,X(val,:),P.class_id(val));assert(isfinite(reliability.brier) && reliability.ece_10_bins>=0);
 original=eba.config();testRows=eba.families(20,original);testRows=testRows(testRows.split=="test",:);
 rejects(@() eba.extract(testRows(1,:),'FFT',params,original,'development',Inf,1),'eba:TestFirewall');

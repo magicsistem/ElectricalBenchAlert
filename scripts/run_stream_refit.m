@@ -3,6 +3,7 @@ function summary=run_stream_refit(mode)
 if nargin<1,mode="legacy";end
 mode=string(mode);assert(isscalar(mode)&&any(mode==["legacy","reselection"]),'eba:StreamRefitMode','Unknown refit mode.');
 cfg=eba.config();acceptance=readtable(fullfile(cfg.output,'development_size_acceptance.csv'));
+methods=["FFT","STFT","DWT","CWT","ST"];
 assert(height(acceptance)==5 && all(acceptance.accepted),'eba:DatasetAcceptance','All five learning-curve gates must pass before stream refitting.');
 pool=gcp('nocreate');
 if isempty(pool)
@@ -15,6 +16,13 @@ F=eba.families(cfg.families_per_cell,cfg);F=F(F.split~="test",:);
 if mode=="reselection",statePath=fullfile(cfg.output,'reselection_state_refinement.mat');prefix="reselection_stream_full";
 else,statePath=fullfile(cfg.output,'state_refinement.mat');prefix="stream_full";end
 R=load(statePath,'retained');
+present=~cellfun(@isempty,R.retained);
+assert(numel(R.retained)==numel(methods) && any(present), ...
+    'eba:StreamCandidateSet','Refinement artifact has an invalid candidate layout.');
+candidateMethods=string(cellfun(@(q) q.model.method,R.retained(present),'UniformOutput',false));
+assert(numel(unique(candidateMethods))==numel(candidateMethods) && ...
+    all(ismember(candidateMethods,methods)), ...
+    'eba:StreamCandidateSet','Refinement contains duplicate or unknown methods.');
 folder=fullfile(cfg.output,'stream_models');rows=cell(0,1);models=cell(size(R.retained));reports=cell(size(models));details=cell(size(models));artifacts=strings(0,1);
 V=F(F.split=="validation",:);levels=[Inf 20 5];schedules=cell(height(V)*(1+2*cfg.noise_realizations),1);k=0;
 for i=1:height(V)
@@ -66,6 +74,7 @@ for m=1:numel(R.retained)
     fprintf('STREAM_REFIT_COMPLETE method=%s event_f1=%.6g eligible=%d\n',model.method,report.f1,eligible);
 end
 summary=vertcat(rows{:});retained=R.retained;
+eba.requireCandidateCoverage(candidateMethods,string(summary.method),'Full stream validation');
 path=fullfile(cfg.output,prefix+"_development.mat");save(path,'models','reports','details','retained','schedules','summary','-v7.3');
 summaryPath=fullfile(cfg.output,prefix+"_validation.csv");writetable(summary,summaryPath);artifacts=[artifacts;string(path);string(summaryPath)];
 manifestId=prefix+"_development";

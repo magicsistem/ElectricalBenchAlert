@@ -2,9 +2,13 @@
 
 MATLAB research pipeline for synthetic 60 Hz electrical disturbance classification and continuous event confirmation.
 
-## Selected detector
+## Model selection status
 
-The corrected validation search selects **FFT + SVM ECOC**, 12-cycle window, 6-cycle hop. The previous DWT selection imposed an undocumented cap of one false alarm per minute, excluding higher-F1 candidates. The corrected code retains false alarms, latency, and RTF as Pareto objectives and uses p95 RTF ≤ 1 as the computational feasibility bound. On 864 full-validation families / 6,048 schedules, FFT measured event F1 **0.491** (95% family/sequence-cluster CI 0.473–0.510), recall **0.564**, missed-event rate **0.436**, and **6.112 unmatched confirmations per normal minute** (5.512–6.789). All 72 pure-normal validation families alarmed at least once. It reaches `CONFIRMED` in the deterministic synthetic demo; the measured alarm burden does not support operational use.
+There is not yet a defensible final continuous-detector winner. The offline DSP SVM comparison and the continuous event detector answer different questions, so the repository now records their leaders separately. The observed offline SVM leader is FFT (nine-class validation Macro F1 **0.579**, 95% family interval **0.560–0.597**). The continuous selection must use complete validation and matched-runtime results from every feasible refined candidate.
+
+The previous freeze path read a legacy full-stream file that contained only DWT and could therefore treat “only result present” as “best.” It also omitted offline-only methods from the comparison table. The corrected path reads the newer `reselection` artifacts, checks candidate coverage, preserves all five offline SVM rows, and marks offline and stream selections separately. Current refinement retained FFT, DWT, and CWT as compute-feasible; ST and STFT did not meet the p95 compute/hop bound. Full refit and matched-runtime evaluation of the corrected feasible candidates must finish before a continuous winner is frozen. Older 0.491 FFT and 0.428 DWT event-F1 summaries use superseded streaming runs and are not current model-selection results.
+
+The detector must report event F1, recall/miss rate, false alarms per normal minute and normal-family alarm incidence with uncertainty. A single deterministic `NORMAL → SUSPECTED → CONFIRMED` demo proves state transitions only; it does not establish model quality or operational suitability.
 
 An illustrative validation sag deterministically reaches `NORMAL → SUSPECTED → CONFIRMED`. The output confidence is a calibrated minimum supporting-window score, not an event probability. The demo stops at confirmation, so the event end is right-censored.
 
@@ -19,7 +23,7 @@ matlab -batch "disp(version); ver"
 matlab -batch "startup; run_all_tests"
 ```
 
-The current local MATLAB run passed all nine suites. A clean clone does not contain the ignored dataset/model artifacts required for full-benchmark or confirmed-demo reproduction yet; this release candidate is not tagged `v1.0.0`.
+The current local MATLAB run passed all nine suites, including a positive control and a negative control for incomplete candidate coverage. A clean clone does not contain the ignored dataset/model artifacts required for full-benchmark or confirmed-demo reproduction; this release candidate is not tagged `v1.0.0`.
 
 The research artifacts and fitted models are generated under ignored `results/` and `data/generated/` paths and are not bundled in this source checkout. This is a release candidate, not a clean-clone v1.0.0 release: full reproduction currently needs those MATLAB artifacts, and the earlier test split was already inspected. Do not use `FROZEN_EXPERIMENT.json` to authorize confirmatory test access for the corrected FFT selection; it binds the superseded DWT protocol. The local full report records the exact validation manifests and the required conditions for a future independent release.
 

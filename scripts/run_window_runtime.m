@@ -1,10 +1,13 @@
-function report=run_window_runtime(method)
+function report=run_window_runtime(method,mode)
 %RUN_WINDOW_RUNTIME One window model per fresh batch on matched physical decision times.
+if nargin<2,mode="reselection";end
+mode=string(mode);assert(isscalar(mode)&&any(mode==["legacy","reselection"]),'eba:RuntimeMode','Unknown stream candidate mode.');
 cfg=eba.config();method=upper(string(method));methods=["FFT","STFT","DWT","CWT","ST"];
 assert(isscalar(method) && any(method==methods),'eba:RuntimeMethod','One retained DSP method is required.');
-R=load(fullfile(cfg.output,'stream_full_development.mat'),'retained');m=find(methods==method);chosen=R.retained{m};
+if mode=="reselection",prefix="reselection_stream_full";else,prefix="stream_full";end
+R=load(fullfile(cfg.output,prefix+"_development.mat"),'retained');m=find(methods==method);chosen=R.retained{m};
 assert(~isempty(chosen),'eba:RuntimeMethod','This representation has no retained feasible screening candidate.');
-path=fullfile(cfg.output,'stream_models',"full_"+lower(method)+".mat");M=load(path,'model');model=M.model;
+path=fullfile(cfg.output,'stream_models',prefix+"_"+lower(method)+".mat");M=load(path,'model');model=M.model;
 settings=chosen.settings;[~,sha]=system('git rev-parse HEAD');settings.git_commit=strtrim(sha);
 F=eba.families(cfg.families_per_cell,cfg);V=F(F.split=="validation",:);ids=zeros(11,1);
 for c=2:12,ids(c-1)=find(V.class_id==c & V.severity_stratum==3 & V.duration_stratum==4,1);end
@@ -59,7 +62,8 @@ end
 report.throughput_windows_per_s=height(timings)/sum(timings.total_s);
 report.streaming_real_time_factor_p95=report.total_p95_s/(model.hop_samples/cfg.Fs);
 report.throughput_input_samples_per_s=model.hop_samples*report.throughput_windows_per_s;
-id="runtime_stream_"+lower(method);paths=[fullfile(cfg.output,id+".csv");fullfile(cfg.output,id+".json")];
+if mode=="reselection",id="runtime_reselection_stream_"+lower(method);else,id="runtime_stream_"+lower(method);end
+paths=[fullfile(cfg.output,id+".csv");fullfile(cfg.output,id+".json")];
 writetable(timings,paths(1));eba.json(paths(2),report);
 eba.manifest(id,cfg,struct('method',method,'classifier','SVM','parameters',model.parameters, ...
     'hyperparameters',model.hyperparameters,'warmups',cfg.runtime_warmups,'repetitions',cfg.runtime_repetitions, ...

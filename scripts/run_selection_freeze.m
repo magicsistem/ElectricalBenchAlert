@@ -76,31 +76,53 @@ for a=1:5
     end
 end
 fprintf('CERTIFIED_PORTABLE_DECISION_CHAIN_PASS models=10 primary_binary_learners=180\n');
-S=load(fullfile(cfg.output,'stream_full_development.mat'),'retained','summary');
+state=load(fullfile(cfg.output,'reselection_state_refinement.mat'),'retained');
+expectedMethods=string(cellfun(@(q) q.model.method,state.retained(~cellfun(@isempty,state.retained)),'UniformOutput',false));
+assert(~isempty(expectedMethods) && numel(unique(expectedMethods))==numel(expectedMethods), ...
+    'eba:FreezeCandidateSet','Corrected state refinement must declare unique feasible candidates.');
+S=load(fullfile(cfg.output,'reselection_stream_full_development.mat'),'retained','summary');
+actualMethods=string(cellfun(@(q) q.model.method,S.retained(~cellfun(@isempty,S.retained)),'UniformOutput',false));
+eba.requireCandidateCoverage(expectedMethods,actualMethods,'Corrected full validation models');
+eba.requireCandidateCoverage(expectedMethods,string(S.summary.method),'Corrected full validation results');
 classification=readtable(fullfile(cfg.output,'validation_svm_metrics.csv'),'TextType','string');
 noise=load(fullfile(cfg.output,'validation_svm_statistics.mat'),'details');robust=noise.details.robustness_summary;
 rows=cell(0,1);workload="";endpoint="";runtimeCommit="";runtimeEvidence=strings(0,1);
 for m=1:numel(methods)
-    if isempty(S.retained{m}),continue;end
-    [R,timingFiles]=timingEvidence("runtime_stream_"+lower(methods(m)),cfg,sha);
+    offline=find(classification.method==methods(m));n=find(string(robust.method)==methods(m));
+    assert(numel(offline)==1 && numel(n)==1);
+    macroF1=classification.macro_f1(offline);noiseAuc=robust.normalized_snr_auc(n);
+    if ~any(expectedMethods==methods(m))
+        rows{end+1}=table(methods(m),macroF1,noiseAuc,NaN,NaN,NaN,NaN,NaN,NaN,false, ...
+            'VariableNames',{'method','primary_nine_class_macro_f1','primary_nine_class_noise_auc','twelve_class_event_f1', ...
+            'matched_latency_s','inference_p95_s','whole_session_peak_RSS_bytes','model_bytes','stream_RTF_p95','eligible'}); %#ok<AGROW>
+        continue
+    end
+    assert(~isempty(S.retained{m}),'eba:FreezeCandidateCoverage','Expected stream candidate is missing.');
+    [R,timingFiles]=timingEvidence("runtime_reselection_stream_"+lower(methods(m)),cfg,sha);
     runtimeEvidence=[runtimeEvidence;timingFiles];
-    manifest=jsondecode(fileread(fullfile(cfg.output,'manifests',"runtime_stream_"+lower(methods(m))+".json")));
+    manifest=jsondecode(fileread(fullfile(cfg.output,'manifests',"runtime_reselection_stream_"+lower(methods(m))+".json")));
     if workload=="",workload=string(R.shared_signal_sha256);endpoint=string(R.shared_endpoints_sha256);runtimeCommit=string(manifest.git_commit);
     else,assert(workload==string(R.shared_signal_sha256) && endpoint==string(R.shared_endpoints_sha256) && runtimeCommit==string(manifest.git_commit),'eba:RuntimeWorkload','Stream candidates must share physical signal and decision endpoints.');end
     assert(R.n_repetitions==cfg.runtime_repetitions && R.warmups==cfg.runtime_warmups);
-    index=find(string(S.summary.method)==methods(m));offline=find(classification.method==methods(m));n=find(string(robust.method)==methods(m));assert(numel(index)==1 && numel(offline)==1 && numel(n)==1);
+    index=find(string(S.summary.method)==methods(m));assert(numel(index)==1);
     row=S.summary(index,:);eligible=row.eligible && R.streaming_real_time_factor_p95<=1;
-    rows{end+1}=table(methods(m),classification.macro_f1(offline),robust.normalized_snr_auc(n),row.event_f1,row.matched_latency_s, ...
+    rows{end+1}=table(methods(m),macroF1,noiseAuc,row.event_f1,row.matched_latency_s, ...
         R.total_p95_s,R.peak_process_RSS_bytes,R.model_serialized_bytes,R.streaming_real_time_factor_p95,eligible, ...
         'VariableNames',{'method','primary_nine_class_macro_f1','primary_nine_class_noise_auc','twelve_class_event_f1', ...
         'matched_latency_s','inference_p95_s','whole_session_peak_RSS_bytes','model_bytes','stream_RTF_p95','eligible'}); %#ok<AGROW>
 end
-pareto=vertcat(rows{:});objectives=pareto{:,2:9};directions=[1 1 1 -1 -1 -1 -1 -1];
-pareto.pareto=eba.pareto(objectives,directions);eligible=find(pareto.eligible & pareto.pareto);
+pareto=vertcat(rows{:});pareto.pareto=false(height(pareto),1);
+streamRows=find(pareto.eligible & all(isfinite(pareto{:,2:9}),2));
+assert(~isempty(streamRows),'eba:FreezeFeasibility','No complete RTF-feasible continuous candidate remains.');
+objectives=pareto{streamRows,2:9};directions=[1 1 1 -1 -1 -1 -1 -1];
+pareto.pareto(streamRows)=eba.pareto(objectives,directions);eligible=find(pareto.eligible & pareto.pareto);
 assert(~isempty(eligible),'eba:FreezeFeasibility','No nondominated pipeline meets declared validation feasibility.');
 [~,order]=sortrows([-pareto.twelve_class_event_f1(eligible),pareto.matched_latency_s(eligible),eligible],[1 2 3]);chosenIndex=eligible(order(1));
-pareto.selected=false(height(pareto),1);pareto.selected(chosenIndex)=true;method=pareto.method(chosenIndex);m=find(methods==method);chosen=S.retained{m};
-selectedPath=fullfile('results','v2','stream_models',"full_"+lower(method)+".mat");model=chosen.model;settings=chosen.settings;
+pareto.selected_stream=false(height(pareto),1);pareto.selected_stream(chosenIndex)=true;
+[~,offlineOrder]=sortrows([-pareto.primary_nine_class_macro_f1,(1:height(pareto))'],[1 2]);offlineWinner=offlineOrder(1);
+pareto.selected_offline=false(height(pareto),1);pareto.selected_offline(offlineWinner)=true;
+method=pareto.method(chosenIndex);offlineMethod=pareto.method(offlineWinner);m=find(methods==method);chosen=S.retained{m};
+selectedPath=fullfile('results','v2','stream_models',"reselection_stream_full_"+lower(method)+".mat");model=chosen.model;settings=chosen.settings;
 settings.method_version='1.0.0';settings.git_commit=sha;settings.method_id=char(method);settings.sequence_id='frozen_sequence';
 modelHash=eba.hash(fullfile(cfg.root,selectedPath),'file');settings.model_version="stream-v1.0.0-"+string(modelHash(1:12));
 % Native development demonstration must succeed before its family/recipe is frozen.
@@ -178,7 +200,8 @@ freeze=struct('schema_version','1.0.0','experiment_id','eba-v1-confirmed-event',
     'selected_stream',struct('path',char(selectedPath),'method',char(method),'training_model_version',char(model.model_version),'model_sha256',modelHash,'settings',settings), ...
     'stream_protocol',struct('mode','single_and_grouped','group_size',4,'noisy_snr_db',[20 5], ...
         'group_noisy_snr_db',20,'schedule_options',options,'sensitivity_iou_thresholds',[.1 .5]), ...
-    'demo',demo,'selection_rule','eligible nondominated validation methods; maximum twelve-class event F1, then minimum conditional matched latency, then declared method order', ...
+    'demo',demo,'selected_offline_dsp',struct('method',char(offlineMethod),'classifier','SVM','metric','nine-class validation Macro F1'), ...
+    'selection_rule','Report the offline DSP leader independently across all five SVM representations. Select the continuous detector only from the complete corrected RTF-feasible stream set; maximize event F1, then minimize conditional matched latency. Offline and streaming winners are separate endpoints.', ...
     'pareto_objectives',{pareto.Properties.VariableNames(2:9)},'pareto_directions',directions, ...
     'scope_limit','synthetic finite-distribution research; not regulatory certification or hard real time');
 eba.json(target,freeze);eba.requireFrozen(cfg);
