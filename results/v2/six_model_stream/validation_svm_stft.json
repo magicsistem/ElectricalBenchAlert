@@ -70,6 +70,6 @@
   "dataset_hash": "94cac6f86bcc8e7a64d68b4026443210707564c360a63a32909150cb01e82c90",
   "noise_snr_db": 20,
   "noise_realization": 1,
-  "evaluation_commit": "6c00bd3353e5262d47098847241fa63238301bd5",
+  "evaluation_commit": "49ca708872be9b5c1bdbe1dd46681eea90481e9f",
   "evaluation_workers": 4
 }
