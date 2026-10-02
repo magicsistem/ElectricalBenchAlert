@@ -1,6 +1,11 @@
 function summary=run_six_model_streambench()
 %RUN_SIX_MODEL_STREAMBENCH Refit heavy RF finalists; reuse frozen light SVM finalists.
-cfg=eba.config();[status,sha]=system('git rev-parse HEAD');assert(status==0);sha=strtrim(sha);
+cfg=eba.config();pool=gcp('nocreate');if isempty(pool)
+    cluster=parcluster('local');cluster.NumWorkers=8;pool=parpool(cluster,8);
+end
+assert(pool.NumWorkers==8,'eba:SixModelWorkers','The full benchmark requires the requested eight MATLAB workers.');
+fprintf('SIX_MODEL_WORKERS workers=%d\n',pool.NumWorkers);
+[status,sha]=system('git rev-parse HEAD');assert(status==0);sha=strtrim(sha);
 [~,dirty]=system('git status --porcelain --untracked-files=normal');
 assert(isempty(strtrim(dirty)),'eba:SixModelSource','A clean committed source tree is required.');
 heavy=load(fullfile(cfg.output,'rf_stream_development.mat'),'candidateSets','summary');
@@ -49,9 +54,6 @@ for m=1:numel(heavy.candidateSets)
     settings.method_version=cfg.method_version;settings.dataset_version=cfg.dataset_version;
     settings.sequence_id="six_model_"+lower(model.method);
     predictions=cell(size(light.schedules));
-    pool=gcp('nocreate');if isempty(pool)
-        c=parcluster('local');try,c.NumWorkers=8;pool=parpool(c,8);catch,pool=parpool(c,min(4,c.NumWorkers));end
-    end
     fprintf('SIX_MODEL_RF_VALIDATION_START method=%s workers=%d windows=%d hop=%d\n', ...
         model.method,pool.NumWorkers,N,model.hop_samples);
     parfor i=1:numel(light.schedules)
