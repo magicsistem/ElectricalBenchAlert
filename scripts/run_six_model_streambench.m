@@ -144,8 +144,7 @@ D=dir(path);row=table(string(model.method),string(classifier),model.window_cycle
     'false_alarms_ci_high','mean_iou','iou_ci_low','iou_ci_high','matched_latency_s','latency_ci_low','latency_ci_high', ...
     'start_error_s','start_error_ci_low','start_error_ci_high','end_error_s','end_error_ci_low','end_error_ci_high', ...
     'runtime_p95_s','stream_RTF_p95','peak_process_RSS_bytes','model_bytes','fit_time_s','fit_families'});
-if classifier=="SVM",runtimePath=fullfile(cfg.output,"runtime_reselection_stream_"+lower(string(model.method))+".json");
-else,runtimePath=fullfile(cfg.output,'six_model_stream',"runtime_rf_"+lower(string(model.method))+".json");end
+runtimePath=fullfile(cfg.output,'six_model_stream',"runtime_"+lower(string(classifier))+"_"+lower(string(model.method))+".json");
 if isfile(runtimePath)
     run=jsondecode(fileread(runtimePath));row.runtime_p95_s=run.total_p95_s;
     row.stream_RTF_p95=run.streaming_real_time_factor_p95;row.peak_process_RSS_bytes=run.peak_process_RSS_bytes;

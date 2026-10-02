@@ -8,13 +8,9 @@ assert(sum(T.classifier=="SVM")==3&&sum(T.classifier=="RF")==3, ...
     'eba:SixSelectionTrack','Selection must retain the three light SVM and three heavy RF models.');
 signalHashes=strings(6,1);endpointHashes=strings(6,1);runtimeFiles=strings(6,1);modelFiles=strings(6,1);
 for i=1:height(T)
-    if T.classifier(i)=="SVM"
-        runtimeFile=fullfile(cfg.output,"runtime_reselection_stream_"+lower(T.method(i))+".json");
-        modelFile=fullfile(cfg.output,'stream_models',"reselection_stream_full_"+lower(T.method(i))+".mat");
-    else
-        runtimeFile=fullfile(cfg.output,'six_model_stream',"runtime_rf_"+lower(T.method(i))+".json");
-        modelFile=fullfile(cfg.output,'six_model_stream',"model_rf_"+lower(T.method(i))+".mat");
-    end
+    runtimeFile=fullfile(cfg.output,'six_model_stream',"runtime_"+lower(T.classifier(i))+"_"+lower(T.method(i))+".json");
+    if T.classifier(i)=="SVM",modelFile=fullfile(cfg.output,'stream_models',"reselection_stream_full_"+lower(T.method(i))+".mat");
+    else,modelFile=fullfile(cfg.output,'six_model_stream',"model_rf_"+lower(T.method(i))+".mat");end
     assert(isfile(runtimeFile)&&isfile(modelFile),'eba:SixSelectionRuntime','Every model needs a fresh-session runtime run.');
     R=jsondecode(fileread(runtimeFile));model=load(modelFile,'model');D=dir(modelFile);
     assert(string(model.model.kind)==T.classifier(i)&&string(model.model.method)==T.method(i)&& ...
