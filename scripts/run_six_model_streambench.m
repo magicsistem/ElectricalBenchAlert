@@ -24,6 +24,8 @@ calFamilies=unique(F.family_id(F.split=="train" & ismember(F.family_id,cal)));
 assert(isempty(intersect(fitFamilies,calFamilies)) && ~any(F.split=="test"), ...
     'eba:SixModelLeakage','RF fit/calibration families overlap or use test.');
 fullHash=eba.hash(jsonencode(table2struct(F)));
+fitFamilies=unique(F.family_id(F.split=="train" & ~ismember(F.family_id,cal)));
+calFamilies=unique(F.family_id(F.split=="train" & ismember(F.family_id,cal)));
 folder=fullfile(cfg.output,'six_model_stream');if ~isfolder(folder),mkdir(folder);end
 rows=cell(6,1);artifacts=strings(0,1);outIndex=0;
 % Preserve the three previously completed, common-workload SVM full validations.
@@ -39,6 +41,17 @@ end
 % Refit the RF candidates on every accepted training family, reserving calibration families.
 for m=1:numel(heavy.candidateSets)
     parent=heavy.candidateSets{m};old=parent.model;N=old.window_samples;
+    modelPath=fullfile(folder,"model_rf_"+lower(old.method)+".mat");
+    validationPath=fullfile(folder,"validation_rf_"+lower(old.method)+".json");
+    detailsPath=fullfile(folder,"details_rf_"+lower(old.method)+".mat");
+    [model,report,resumed]=resumeRF(modelPath,validationPath,detailsPath,old,fullHash,fitFamilies,calFamilies);
+    if resumed
+        outIndex=outIndex+1;row=makeRow(model,report,modelPath,"RF",cfg);
+        row.offline_macro_f1=offlineScore("RF",model.method,cfg);row.training_commit=string(model.training_git_commit);
+        rows{outIndex}=row;artifacts=[artifacts;string(modelPath);string(validationPath);string(detailsPath)]; %#ok<AGROW>
+        fprintf('SIX_MODEL_RF_VALIDATION_REUSED method=%s eventF1=%.6f source_commit=%s\n', ...
+            model.method,report.f1,model.training_git_commit);continue;
+    end
     [X,P,info]=eba.windowData(F,old.method,old.parameters,N,cfg);
     fitRows=P.split=="train" & ~ismember(P.family_id,cal);
     calRows=P.split=="train" & ismember(P.family_id,cal);
@@ -49,7 +62,7 @@ for m=1:numel(heavy.candidateSets)
     model.model_version="stream-full-rf-"+lower(old.method)+"-"+model.window_cycles;
     model.training_family_ids=unique(P.family_id(fitRows));model.calibration_family_ids=unique(P.family_id(calRows));
     model.training_dataset_hash=info.family_hash;model.training_git_commit=sha;
-    modelPath=fullfile(folder,"model_rf_"+lower(model.method)+".mat");eba.saveModel(modelPath,model);
+    eba.saveModel(modelPath,model);
     settings=parent.settings;settings.model_version=model.model_version;settings.git_commit=sha;
     settings.method_version=cfg.method_version;settings.dataset_version=cfg.dataset_version;
     settings.sequence_id="six_model_"+lower(model.method);
@@ -67,8 +80,7 @@ for m=1:numel(heavy.candidateSets)
     report.hop_samples=model.hop_samples;report.n_validation_families=numel(unique(F.family_id(F.split=="validation")));
     report.dataset_hash=fullHash;report.fit_family_count=numel(model.training_family_ids);
     report.calibration_family_count=numel(model.calibration_family_ids);
-    validationPath=fullfile(folder,"validation_rf_"+lower(model.method)+".json");eba.json(validationPath,report);
-    detailsPath=fullfile(folder,"details_rf_"+lower(model.method)+".mat");save(detailsPath,'details','-v7.3');
+    eba.json(validationPath,report);save(detailsPath,'details','-v7.3');
     outIndex=outIndex+1;row=makeRow(model,report,modelPath,"RF",cfg);
     row.offline_macro_f1=offlineScore("RF",model.method,cfg);row.training_commit=sha;rows{outIndex}=row;
     artifacts=[artifacts;string(modelPath);string(validationPath);string(detailsPath)]; %#ok<AGROW>
@@ -119,4 +131,25 @@ function value=offlineScore(classifier,method,cfg)
 if classifier=="SVM",name='combined_validation_svm_metrics.csv';else,name='combined_validation_rf_metrics.csv';end
 T=readtable(fullfile(cfg.output,name),'TextType','string');ix=T.method==string(method);
 assert(nnz(ix)==1,'eba:SixModelOffline','Offline score missing or duplicated.');value=T.macro_f1(ix);
+end
+function [model,report,ok]=resumeRF(modelPath,reportPath,detailsPath,parent,datasetHash,fitFamilies,calFamilies)
+model=[];report=[];ok=false;
+if ~isfile(modelPath)||~isfile(reportPath)||~isfile(detailsPath),return;end
+saved=load(modelPath,'model');model=saved.model;report=jsondecode(fileread(reportPath));
+commit=string(model.training_git_commit);
+if isempty(regexp(char(commit),'^[0-9a-f]{40}$','once')),return;end
+files={'+eba/config.m','+eba/fit.m','+eba/calibrate.m','+eba/predict.m','+eba/features.m', ...
+    '+eba/windowData.m','+eba/record.m','+eba/waveform.m','+eba/noise.m','+eba/streamPredictions.m', ...
+    '+eba/continuousSignal.m','+eba/continuousSchedule.m','+eba/stateStep.m','+eba/replayWindows.m', ...
+    '+eba/evaluateStreamEvidence.m','+eba/eventMetrics.m','+eba/severity.m','config/research_v2.json'};
+[status,~]=system(sprintf('git diff --quiet %s HEAD -- %s',char(commit),strjoin(files,' ')));
+ok=status==0 && string(model.kind)=="RF" && string(model.method)==string(parent.method) && ...
+    isequaln(model.parameters,parent.parameters) && model.window_samples==parent.window_samples && ...
+    model.window_cycles==parent.window_cycles && model.hop_samples==parent.hop_samples && ...
+    string(model.training_dataset_hash)==string(datasetHash) && ...
+    isequal(string(model.training_family_ids(:)),string(fitFamilies(:))) && ...
+    isequal(string(model.calibration_family_ids(:)),string(calFamilies(:))) && ...
+    string(report.method)==string(parent.method) && string(report.classifier)=="RF" && ...
+    string(report.dataset_hash)==string(datasetHash) && report.n_sequences==6048 && ...
+    report.n_independent_clusters==864 && isfinite(report.f1) && isfinite(report.f1_ci_low);
 end
