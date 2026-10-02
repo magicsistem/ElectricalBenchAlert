@@ -6,16 +6,16 @@ selection=jsondecode(fileread(selectionPath));assert(strcmp(selection.status,'PA
 method=string(selection.selected_method);classifier=string(selection.selected_classifier);
 if classifier=="SVM"
     modelPath=fullfile(cfg.output,'stream_models',"reselection_stream_full_"+lower(method)+".mat");
-    state=load(fullfile(cfg.output,'reselection_state_refinement.mat'),'retained');
-    ix=find(cellfun(@(q)~isempty(q)&&string(q.model.method)==method,state.retained));
+    input=load(fullfile(cfg.output,'six_model_stream','streambench_inputs.mat'),'light');
+    ix=find(string(input.light.summary.method)==method);
     assert(isscalar(ix),'eba:SixDemoSettings','Retained SVM temporal settings are missing.');
-    settings=state.retained{ix}.settings;
+    settings=input.light.retained{ix}.settings;
 else
     modelPath=fullfile(cfg.output,'six_model_stream',"model_rf_"+lower(method)+".mat");
-    state=load(fullfile(cfg.output,'rf_stream_development.mat'),'candidateSets');
-    ix=find(cellfun(@(q)string(q.model.method)==method,state.candidateSets));
+    input=load(fullfile(cfg.output,'six_model_stream','streambench_inputs.mat'),'heavy');
+    ix=find(string(cellfun(@(q)q.model.method,input.heavy.candidateSets,'UniformOutput',false))==method);
     assert(isscalar(ix),'eba:SixDemoSettings','Selected RF temporal settings are missing.');
-    settings=state.candidateSets{ix}.settings;
+    settings=input.heavy.candidateSets{ix}.settings;
 end
 stored=load(modelPath,'model');model=stored.model;
 settings.model_version=model.model_version;settings.git_commit=model.training_git_commit;
