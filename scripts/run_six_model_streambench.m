@@ -8,16 +8,17 @@ fprintf('SIX_MODEL_WORKERS workers=%d policy=4 physical cores; 8-worker A/B was 
 [status,sha]=system('git rev-parse HEAD');assert(status==0);sha=strtrim(sha);
 [~,dirty]=system('git status --porcelain --untracked-files=normal');
 assert(isempty(strtrim(dirty)),'eba:SixModelSource','A clean committed source tree is required.');
-heavy=load(fullfile(cfg.output,'rf_stream_development.mat'),'candidateSets','summary');
+input=load(fullfile(cfg.output,'six_model_stream','streambench_inputs.mat'),'light','heavy');
+light=input.light;heavy=input.heavy;
 assert(isequal(string(heavy.summary.method(:)),["FFT";"ST";"CWT"]), ...
     'eba:SixModelHeavy','The RF track must contain the three fixed 12-class offline leaders.');
 light=load(fullfile(cfg.output,'reselection_stream_full_development.mat'),'models','reports','retained','summary','schedules');
 lightMethods=["FFT","STFT","DWT"];
 eba.requireCandidateCoverage(lightMethods,string(light.summary.method),'Retained light stream candidates');
-assert(numel(light.schedules)==6048 && height(light.summary)==3,'eba:SixModelValidation', ...
-    'The source validation package must contain 6,048 schedules and three light models.');
+assert(numel(light.schedules)==864 && height(light.summary)==3,'eba:SixModelValidation', ...
+    'The compact workload must contain 864 schedules and three light models.');
 % One paired 20 dB realization per independent validation family bounds heavy DSP cost.
-scheduleIds=2:7:numel(light.schedules);schedules=light.schedules(scheduleIds);
+schedules=light.schedules;
 familyIds=string(cellfun(@(s) s.family_ids(1),schedules,'UniformOutput',false));
 assert(numel(schedules)==864 && all(cellfun(@(s) s.snr_db==20 && s.noise_realization==1,schedules)) && ...
     numel(unique(familyIds))==864,'eba:SixModelValidation', ...

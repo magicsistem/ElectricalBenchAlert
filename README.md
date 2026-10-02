@@ -2,44 +2,52 @@
 
 MATLAB research pipeline for synthetic 60 Hz electrical disturbance classification and continuous event confirmation.
 
-## Validation-selected models
+## Validation-selected stream model
 
-The corrected, validation-only comparison selects **STFT + SVM ECOC** for both the primary offline DSP track and the continuous stream track. Selection covered all five offline representations and all three refined RTF-feasible continuous candidates; test was not accessed.
+The six-model comparison retains three light SVM pipelines and adds the three offline-leading RF pipelines. Under the quality-first rule, **CWT + RF** is selected for the simulated detector.
 
-| Track | Method | Primary metric | Other validation result |
-|---|---|---:|---|
-| Offline DSP, shared SVM | **STFT** | Macro-F1 0.5915 [0.5710, 0.6114] | Nine primary classes; family-cluster 95% CI |
-| Continuous events | **STFT**, 30-cycle window, 7.5-cycle hop | Event F1 0.5656 [0.5421, 0.5891] | Recall 0.5150; false alarms 2.5605/min [2.2884, 2.8678]; matched latency 0.5560 s |
-| Matched runtime | STFT | p95 RTF 0.1509 | 100 decisions, two warmups, fresh MATLAB session |
+| Model | Event F1 [95% CI] | Recall | False alarms/min | Confirmation latency | p95 compute / hop | Model size |
+|---|---:|---:|---:|---:|---:|---:|
+| FFT + SVM | 0.7093 [0.6800, 0.7379] | 0.5947 | 0.686 | 0.237 s | 0.154 | 2.66 MB |
+| STFT + SVM | 0.6926 [0.6625, 0.7220] | 0.5732 | 0.687 | 0.480 s | 0.151 | 2.67 MB |
+| DWT + SVM | 0.6364 [0.6029, 0.6687] | 0.5051 | 0.693 | 0.555 s | 0.095 | 2.67 MB |
+| FFT + RF | 0.7972 [0.7727, 0.8216] | 0.7942 | 1.651 | 0.228 s | 3.888 | 72.43 MB |
+| ST + RF | 0.7574 [0.7333, 0.7813] | 0.7551 | 1.997 | 0.357 s | 1.789 | 73.61 MB |
+| **CWT + RF** | **0.8031 [0.7784, 0.8270]** | 0.7210 | **0.624** | 0.468 s | **1.616** | 72.35 MB |
 
-FFT has lower event F1 (0.4913) and higher false-alarm rate (6.1118/min); DWT has lower event F1 (0.5236), lower false alarms (2.0526/min), and faster RTF (0.0946). All three are Pareto candidates, so the stated rule selects the highest Event F1 and reports the tradeoffs. The old DWT-only choice came from a legacy full-stream artifact that omitted the other methods; the selector now fails on incomplete candidate coverage and reports offline and stream leaders separately.
+The six models form a Pareto front across event quality, false alarms, latency, compute cost, and model size. The selector has no latency or size exclusion: it maximizes the grouped-bootstrap lower Event F1 bound, then point F1, fewer false alarms, and shorter latency. A paired analysis across 864 validation families estimates CWT-RF minus FFT-RF at +0.0059 Event F1 (95% CI −0.0171 to +0.0289; Holm-adjusted p=0.5924). The two heavy leaders are statistically unresolved on Event F1. CWT-RF is selected by the declared rule; it offers higher precision and fewer false alarms, while FFT-RF has higher recall and lower confirmation latency.
 
-STFT is the best candidate in this finite validation search, **not an operationally acceptable detector**: all 72 pure-normal validation families had at least one alarm. A deterministic sag demo reaches `NORMAL → SUSPECTED → CONFIRMED` in 0.5165 s with three supporting windows and no preceding false alarms; the demo illustrates the transition and does not estimate generalization. The earlier test split was already inspected under the superseded protocol; a new untouched test is required before confirmatory claims or v1.0.0.
+CWT-RF is 72.35 MB and its p95 compute time is 202 ms for a 125 ms hop (RTF 1.616). It does not sustain real-time processing on the measured laptop; this cost is accepted for the current simulation milestone and does not make it embedded-ready. The confirmed-event demonstration reaches NORMAL → SUSPECTED → CONFIRMED for a validation sag in 0.2665 s. This single sequence checks integration, not generalization.
 
-An illustrative validation sag deterministically reaches `NORMAL → SUSPECTED → CONFIRMED`. The output confidence is a calibrated minimum supporting-window score, not an event probability. The demo stops at confirmation, so the event end is right-censored.
+Temporal evaluation covers one paired 20 dB noise realization per family (864 validation families, 792 true events). The original test split was inspected during a superseded phase, so these validation results do not constitute an untouched confirmatory test or justify a confirmatory v1.0.0 release. This is synthetic disturbance research, not regulatory compliance measurement.
 
-## Requirements and checks
+## Requirements and tests
 
 MATLAB R2026b with Signal Processing Toolbox, Wavelet Toolbox, Statistics and Machine Learning Toolbox, and Deep Learning Toolbox.
 
-```sh
-git clone https://github.com/magicsistem/ElectricalBenchAlert.git
-cd ElectricalBenchAlert
-matlab -batch "disp(version); ver"
-matlab -batch "startup; run_all_tests"
-```
+    git clone https://github.com/magicsistem/ElectricalBenchAlert.git
+    cd ElectricalBenchAlert
+    matlab -batch "disp(version); ver"
+    matlab -batch "startup; run_all_tests"
 
-The current local MATLAB run passed all nine suites, including positive/negative candidate-selection controls. A clean clone does not contain the ignored dataset/model artifacts required for full reproduction; this release candidate is not tagged `v1.0.0`.
+The current local MATLAB suite passed 9/9 suites. Research artifacts and fitted models are stored under ignored results/ and data/generated/ paths and are not bundled in this source checkout; complete reproduction from a clean clone therefore requires those artifacts or the full generation workflow.
 
-The research artifacts and fitted models are generated under ignored `results/` and `data/generated/` paths and are not bundled in this source checkout. This is a release candidate, not a clean-clone v1.0.0 release: full reproduction currently needs those MATLAB artifacts, and the earlier test split was already inspected. Do not use `FROZEN_EXPERIMENT.json` to authorize confirmatory test access for the corrected STFT selection; it binds the superseded DWT protocol. The local full report records the exact validation manifests and the required conditions for a future independent release.
+With the required local dataset and model artifacts available, reproduce the comparison, runtime, statistical analysis, and demo:
 
-The local Spanish final report is `local_docs/FINAL_REPORT.md`; raw MATLAB outputs and figures are under `results/v2/`.
+    matlab -batch "startup; addpath('scripts'); prepare_six_model_streambench_inputs"
+    matlab -batch "startup; addpath('scripts'); run_six_model_streambench"
+    matlab -batch "startup; addpath('scripts'); run_six_model_runtime('RF','FFT')"
+    matlab -batch "startup; addpath('scripts'); run_six_model_runtime('RF','ST')"
+    matlab -batch "startup; addpath('scripts'); run_six_model_runtime('RF','CWT')"
+    matlab -batch "startup; addpath('scripts'); run_six_model_selection; verify_six_model_streambench; verify_six_model_selection"
+    matlab -batch "startup; addpath('scripts'); run_six_model_paired_events"
+    matlab -batch "startup; addpath('scripts'); run_selected_six_model_demo"
 
 ## Scientific scope
 
 - Offline DSP comparison: FFT, STFT, DWT, CWT, and band-limited S-Transform with a common feature protocol and controlled SVM; Random Forest is a sensitivity classifier. Separate raw-waveform CNN and TCN baselines are reported.
-- Dataset v2: 5,760 independent scenario families, 109,440 clean/noisy derivatives, nine primary disturbance classes and three declared closed-set composites. All derivatives remain in their family split.
-- Continuous full validation: 864 independent families and 6,048 single-event schedules for the selected detector; separate close-spacing schedules are also measured. The previously inspected test metrics belong to the superseded DWT candidate.
-- Research scope: synthetic event classification and confirmation. The project does not calculate regulatory Pst or claim compliance with Ecuadorian or Peruvian power-quality regulations.
-
-The historical 630-record waveform set was unavailable; its hashes cannot reconstruct its missing samples. Nine MAT reference fixtures are preserved, and the new MATLAB dataset is a separately generated dataset, not a reconstruction of those absent records. No MQTT, broker, ESP32, Wokwi, Flutter, network transport, or mobile notification layer is included.
+- Dataset v2: 5,760 independent scenario families, 109,440 clean/noisy derivatives, nine primary disturbance classes and three declared closed-set composites. All derivatives remain within their family split.
+- Continuous detection: synthetic signal generation, sliding windows, event matching, latency, false alarms, and the NORMAL → SUSPECTED → CONFIRMED state path.
+- The project does not calculate regulatory Pst or claim compliance with Ecuadorian or Peruvian power-quality regulations.
+- The earlier 630-record waveform set was unavailable; its hashes cannot reconstruct missing samples. The nine MAT fixtures remain references; dataset v2 is a separate MATLAB generation.
+- MQTT, broker, ESP32, Wokwi, Flutter, networking, and mobile notifications are outside this phase.
