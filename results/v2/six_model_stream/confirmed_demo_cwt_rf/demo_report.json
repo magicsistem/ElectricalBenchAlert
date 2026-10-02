@@ -3,7 +3,7 @@
   "scope": "single deterministic clean validation illustration; no generalization claim",
   "method": "CWT",
   "classifier": "RF",
-  "selection_sha256": "c463f585b3faa132b5aefae7cbc80a0e6ecb836c555118d2482162637d312934",
+  "selection_sha256": "31b8e2e5209d3f181b90b2125496aec4cf7b25637d7287621cf4ad750f3cfcd8",
   "summary": {
     "class": "voltage_sag",
     "physical_start_s": 2.7335,

@@ -1,8 +1,8 @@
 {
   "experiment_id": "six_model_stream_validation",
-  "timestamp_utc": "2026-10-02T05:46:46Z",
-  "git_commit": "c9216617117564ca8d554a48a72b0105aa4cfffe",
-  "repository_state_clean": true,
+  "timestamp_utc": "2026-10-02T18:23:38Z",
+  "git_commit": "6c00bd3353e5262d47098847241fa63238301bd5",
+  "repository_state_clean": false,
   "MATLAB_version": "26.2.0.3386108 (R2026b)",
   "toolbox_versions": [
     {
@@ -565,8 +565,8 @@
     }
   ],
   "OS": "Linux 7.2.7-1-cachyos",
-  "CPU": "Architecture:                x86_64\n  CPU op-mode(s):            32-bit, 64-bit\n  Address sizes:             39 bits physical, 48 bits virtual\n  Byte Order:                Little Endian\nCPU(s):                      8\n  On-line CPU(s) list:       0-7\nVendor ID:                   GenuineIntel\n  Model name:                11th Gen Intel(R) Core(TM) i7-1165G7 @ 2.80GHz\n    CPU family:              6\n    Model:                   140\n    Thread(s) per core:      2\n    Core(s) per socket:      4\n    Socket(s):               1\n    Stepping:                1\n    Microcode version:       0xbe\n    CPU(s) scaling MHz:      47%\n    CPU max MHz:             4700.0000\n    CPU min MHz:             400.0000\n    BogoMIPS:                5606.40\n    Flags:                   fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pg\n                             e mca cmov pat pse36 clflush dts acpi mmx fxsr sse \n                             sse2 ss ht tm pbe syscall nx pdpe1gb rdtscp lm cons\n                             tant_tsc art arch_perfmon pebs bts rep_good nopl xt\n                             opology nonstop_tsc cpuid aperfmperf tsc_known_freq\n                              pni pclmulqdq dtes64 monitor ds_cpl vmx est tm2 ss\n                             se3 sdbg fma cx16 xtpr pdcm pcid sse4_1 sse4_2 x2ap\n                             ic movbe popcnt tsc_deadline_timer aes xsave avx f1\n                             6c rdrand lahf_lm abm 3dnowprefetch cpuid_fault epb\n                              cat_l2 cdp_l2 ssbd ibrs ibpb stibp ibrs_enhanced t\n                             pr_shadow flexpriority ept vpid ept_ad fsgsbase tsc\n                             _adjust bmi1 avx2 smep bmi2 erms invpcid rdt_a avx5\n                             12f avx512dq rdseed adx smap avx512ifma clflushopt \n                             clwb intel_pt avx512cd sha_ni avx512bw avx512vl xsa\n                             veopt xsavec xgetbv1 xsaves split_lock_detect user_\n                             shstk dtherm ida arat pln pts hwp hwp_notify hwp_ac\n                             t_window hwp_epp hwp_pkg_req vnmi avx512vbmi umip p\n                             ku ospke avx512_vbmi2 gfni vaes vpclmulqdq avx512_v\n                             nni avx512_bitalg avx512_vpopcntdq rdpid movdiri mo\n                             vdir64b fsrm avx512_vp2intersect md_clear ibt flush\n                             _l1d arch_capabilities\nVirtualization features:     \n  Virtualization:            VT-x\nCaches (sum of all):         \n  L1d:                       192 KiB (4 instances)\n  L1i:                       128 KiB (4 instances)\n  L2:                        5 MiB (4 instances)\n  L3:                        12 MiB (1 instance)\nNUMA:                        \n  NUMA node(s):              1\n  NUMA node0 CPU(s):         0-7\nVulnerabilities:             \n  Gather data sampling:      Mitigation; Microcode\n  Ghostwrite:                Not affected\n  Indirect target selection: Mitigation; Aligned branch/return thunks\n  Itlb multihit:             Not affected\n  L1tf:                      Not affected\n  Mds:                       Not affected\n  Meltdown:                  Not affected\n  Mmio stale data:           Not affected\n  Old microcode:             Not affected\n  Reg file data sampling:    Not affected\n  Retbleed:                  Not affected\n  Spec rstack overflow:      Not affected\n  Spec store bypass:         Mitigation; Speculative Store Bypass disabled via p\n                             rctl\n  Spectre v1:                Mitigation; usercopy/swapgs barriers and __user poi\n                             nter sanitization\n  Spectre v2:                Mitigation; Enhanced / Automatic IBRS; IBPB conditi\n                             onal; PBRSB-eIBRS SW sequence; BHI SW loop, KVM SW \n                             loop\n  Srbds:                     Not affected\n  Tsa:                       Not affected\n  Tsx async abort:           Not affected\n  Vmscape:                   Not affected",
-  "RAM": "total        used        free      shared  buff/cache   available\nMem:     33361797120 15236067328 13281808384  1191092224  6573244416 18125729792\nSwap:    59131289600  6066896896 53064392704",
+  "CPU": "Architecture:                x86_64\n  CPU op-mode(s):            32-bit, 64-bit\n  Address sizes:             39 bits physical, 48 bits virtual\n  Byte Order:                Little Endian\nCPU(s):                      8\n  On-line CPU(s) list:       0-7\nVendor ID:                   GenuineIntel\n  Model name:                11th Gen Intel(R) Core(TM) i7-1165G7 @ 2.80GHz\n    CPU family:              6\n    Model:                   140\n    Thread(s) per core:      2\n    Core(s) per socket:      4\n    Socket(s):               1\n    Stepping:                1\n    Microcode version:       0xbe\n    CPU(s) scaling MHz:      55%\n    CPU max MHz:             4700.0000\n    CPU min MHz:             400.0000\n    BogoMIPS:                5606.40\n    Flags:                   fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pg\n                             e mca cmov pat pse36 clflush dts acpi mmx fxsr sse \n                             sse2 ss ht tm pbe syscall nx pdpe1gb rdtscp lm cons\n                             tant_tsc art arch_perfmon pebs bts rep_good nopl xt\n                             opology nonstop_tsc cpuid aperfmperf tsc_known_freq\n                              pni pclmulqdq dtes64 monitor ds_cpl vmx est tm2 ss\n                             se3 sdbg fma cx16 xtpr pdcm pcid sse4_1 sse4_2 x2ap\n                             ic movbe popcnt tsc_deadline_timer aes xsave avx f1\n                             6c rdrand lahf_lm abm 3dnowprefetch cpuid_fault epb\n                              cat_l2 cdp_l2 ssbd ibrs ibpb stibp ibrs_enhanced t\n                             pr_shadow flexpriority ept vpid ept_ad fsgsbase tsc\n                             _adjust bmi1 avx2 smep bmi2 erms invpcid rdt_a avx5\n                             12f avx512dq rdseed adx smap avx512ifma clflushopt \n                             clwb intel_pt avx512cd sha_ni avx512bw avx512vl xsa\n                             veopt xsavec xgetbv1 xsaves split_lock_detect user_\n                             shstk dtherm ida arat pln pts hwp hwp_notify hwp_ac\n                             t_window hwp_epp hwp_pkg_req vnmi avx512vbmi umip p\n                             ku ospke avx512_vbmi2 gfni vaes vpclmulqdq avx512_v\n                             nni avx512_bitalg avx512_vpopcntdq rdpid movdiri mo\n                             vdir64b fsrm avx512_vp2intersect md_clear ibt flush\n                             _l1d arch_capabilities\nVirtualization features:     \n  Virtualization:            VT-x\nCaches (sum of all):         \n  L1d:                       192 KiB (4 instances)\n  L1i:                       128 KiB (4 instances)\n  L2:                        5 MiB (4 instances)\n  L3:                        12 MiB (1 instance)\nNUMA:                        \n  NUMA node(s):              1\n  NUMA node0 CPU(s):         0-7\nVulnerabilities:             \n  Gather data sampling:      Mitigation; Microcode\n  Ghostwrite:                Not affected\n  Indirect target selection: Mitigation; Aligned branch/return thunks\n  Itlb multihit:             Not affected\n  L1tf:                      Not affected\n  Mds:                       Not affected\n  Meltdown:                  Not affected\n  Mmio stale data:           Not affected\n  Old microcode:             Not affected\n  Reg file data sampling:    Not affected\n  Retbleed:                  Not affected\n  Spec rstack overflow:      Not affected\n  Spec store bypass:         Mitigation; Speculative Store Bypass disabled via p\n                             rctl\n  Spectre v1:                Mitigation; usercopy/swapgs barriers and __user poi\n                             nter sanitization\n  Spectre v2:                Mitigation; Enhanced / Automatic IBRS; IBPB conditi\n                             onal; PBRSB-eIBRS SW sequence; BHI SW loop, KVM SW \n                             loop\n  Srbds:                     Not affected\n  Tsa:                       Not affected\n  Tsx async abort:           Not affected\n  Vmscape:                   Not affected",
+  "RAM": "total        used        free      shared  buff/cache   available\nMem:     33361797120 15479189504 14647521280   921038848  4699758592 17882607616\nSwap:    59131289600  5364174848 53767114752",
   "dataset_version": "2.0.0",
   "seed": 2.0260928E+7,
   "split_seed": 928101,
@@ -775,11 +775,11 @@
     },
     {
       "path": "results/v2/six_model_stream/validation_svm_fft.json",
-      "sha256": "ccd1b98dbf3ed7fa69529047fbba38e2ec73edec71d885c48b93cadfa85ba2f5"
+      "sha256": "4bddb02769ffa52f19479cdf031dc69d49ec61e279d8f5a8b94a90e9ea473deb"
     },
     {
       "path": "results/v2/six_model_stream/details_svm_fft.mat",
-      "sha256": "eacc8a30f636f88e0f8691a0e72cab46e3991d400830dd501a3d94c3d75500f8"
+      "sha256": "5f28f06ae6ed27482a01ff2fd3893e76b188a81a5a32ef42987b59769e81fe75"
     },
     {
       "path": "results/v2/stream_models/reselection_stream_full_stft.mat",
@@ -787,11 +787,11 @@
     },
     {
       "path": "results/v2/six_model_stream/validation_svm_stft.json",
-      "sha256": "9216b44455ad4ab8db53af6dac7459bd7a891fb1d6341c95b83dafcebd608bf8"
+      "sha256": "987d49b0233e91ee3d2a43e4ed85b6f1daf95ca19f53ea990ca21b32dab8427a"
     },
     {
       "path": "results/v2/six_model_stream/details_svm_stft.mat",
-      "sha256": "6fb7b97f1b72062e045f1f42dacc2941ba3451f27ad4b68e018903d20bc1c09f"
+      "sha256": "ab0bc39a7d8cfe6754abfb7d173404b8e9a20835ffa18c1a6d7403f078329337"
     },
     {
       "path": "results/v2/stream_models/reselection_stream_full_dwt.mat",
@@ -799,11 +799,11 @@
     },
     {
       "path": "results/v2/six_model_stream/validation_svm_dwt.json",
-      "sha256": "d0f8a07ef0d7616174890fa8407b7d4d7c0a10b34c9daa5d7e6da9e225e26d9e"
+      "sha256": "ad319815fac4d8912d2fe49a71b9b59a3e43371e32f41e858dd8742be9bc70ac"
     },
     {
       "path": "results/v2/six_model_stream/details_svm_dwt.mat",
-      "sha256": "f7fc6cbac4346e159fec139ecd575bc9d86c04fa0acb1f33234a0a6fdde183f0"
+      "sha256": "082f52e3dc8e6ab8d0863b58fa2a83243fefc63b1753ee60b127c023359bc19a"
     },
     {
       "path": "results/v2/six_model_stream/model_rf_fft.mat",
