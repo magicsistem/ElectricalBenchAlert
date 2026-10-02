@@ -34,7 +34,6 @@ The current local MATLAB suite passed 9/9 suites. Research artifacts and fitted 
 
 With the required local dataset and model artifacts available, reproduce the comparison, runtime, statistical analysis, and demo:
 
-    matlab -batch "startup; addpath('scripts'); prepare_six_model_streambench_inputs"
     matlab -batch "startup; addpath('scripts'); run_six_model_streambench"
     matlab -batch "startup; addpath('scripts'); run_six_model_runtime('RF','FFT')"
     matlab -batch "startup; addpath('scripts'); run_six_model_runtime('RF','ST')"
@@ -42,6 +41,8 @@ With the required local dataset and model artifacts available, reproduce the com
     matlab -batch "startup; addpath('scripts'); run_six_model_selection; verify_six_model_streambench; verify_six_model_selection"
     matlab -batch "startup; addpath('scripts'); run_six_model_paired_events"
     matlab -batch "startup; addpath('scripts'); run_selected_six_model_demo"
+
+If the full development artifacts have been regenerated, prepare the reduced 864-family input package with prepare_six_model_streambench_inputs before running the streambench.
 
 ## Scientific scope
 
