@@ -15,7 +15,13 @@ light=load(fullfile(cfg.output,'reselection_stream_full_development.mat'),'model
 lightMethods=["FFT","STFT","DWT"];
 eba.requireCandidateCoverage(lightMethods,string(light.summary.method),'Retained light stream candidates');
 assert(numel(light.schedules)==6048 && height(light.summary)==3,'eba:SixModelValidation', ...
-    'The retained validation workload must contain 6,048 schedules and three light models.');
+    'The source validation package must contain 6,048 schedules and three light models.');
+% One paired 20 dB realization per independent validation family bounds heavy DSP cost.
+scheduleIds=2:7:numel(light.schedules);schedules=light.schedules(scheduleIds);
+familyIds=string(cellfun(@(s) s.family_ids(1),schedules,'UniformOutput',false));
+assert(numel(schedules)==864 && all(cellfun(@(s) s.snr_db==20 && s.noise_realization==1,schedules)) && ...
+    numel(unique(familyIds))==864,'eba:SixModelValidation', ...
+    'The common temporal workload must have one 20 dB schedule per independent family.');
 F=eba.families(cfg.families_per_cell,cfg);F=F(F.split~="test",:);
 [~,cal]=eba.subsetFamilies(F,max(cfg.learning_train_families_per_cell), ...
     cfg.families_per_cell/20*cfg.split_per_block.validation);
@@ -28,15 +34,28 @@ fitFamilies=unique(F.family_id(F.split=="train" & ~ismember(F.family_id,cal)));
 calFamilies=unique(F.family_id(F.split=="train" & ismember(F.family_id,cal)));
 folder=fullfile(cfg.output,'six_model_stream');if ~isfolder(folder),mkdir(folder);end
 rows=cell(6,1);artifacts=strings(0,1);outIndex=0;
-% Preserve the three previously completed, common-workload SVM full validations.
+% Re-evaluate light finalists on the same 20 dB schedule for every family.
 for method=lightMethods
     m=find(string(light.summary.method)==method);outIndex=outIndex+1;
-    model=light.models{m};report=light.reports{m};retained=light.retained{m};
+    model=light.models{m};retained=light.retained{m};settings=retained.settings;
+    settings.model_version=model.model_version;settings.git_commit=model.training_git_commit;
     modelPath=fullfile(cfg.output,'stream_models',"reselection_stream_full_"+lower(method)+".mat");
     saved=load(modelPath,'model');assert(string(model.kind)=="SVM" && isequaln(model.fitted,saved.model.fitted));
+    predictions=cell(size(schedules));
+    fprintf('SIX_MODEL_SVM_VALIDATION_START method=%s sequences=%d workers=%d\n',method,numel(schedules),pool.NumWorkers);
+    parfor i=1:numel(schedules)
+        predictions{i}=eba.streamPredictions(schedules{i},model,cfg,modelPath,true);
+    end
+    [report,details]=eba.evaluateStreamEvidence(schedules,predictions,settings,cfg);
+    report.method=method;report.classifier="SVM";report.window_cycles=model.window_cycles;
+    report.hop_samples=model.hop_samples;report.n_validation_families=864;
+    report.dataset_hash=fullHash;report.noise_snr_db=20;report.noise_realization=1;report.evaluation_commit=sha;
+    reportPath=fullfile(folder,"validation_svm_"+lower(method)+".json");
+    detailsPath=fullfile(folder,"details_svm_"+lower(method)+".mat");
+    eba.json(reportPath,report);save(detailsPath,'details','-v7.3');
     row=makeRow(model,report,modelPath,"SVM",cfg);row.offline_macro_f1=offlineScore("SVM",method,cfg);
     row.training_commit=string(model.training_git_commit);rows{outIndex}=row;
-    artifacts=[artifacts;string(modelPath);fullfile(cfg.output,"reselection_stream_full_validation_"+lower(method)+".json")]; %#ok<AGROW>
+    artifacts=[artifacts;string(modelPath);string(reportPath);string(detailsPath)]; %#ok<AGROW>
 end
 % Refit the RF candidates on every accepted training family, reserving calibration families.
 for m=1:numel(heavy.candidateSets)
@@ -66,20 +85,21 @@ for m=1:numel(heavy.candidateSets)
     settings=parent.settings;settings.model_version=model.model_version;settings.git_commit=sha;
     settings.method_version=cfg.method_version;settings.dataset_version=cfg.dataset_version;
     settings.sequence_id="six_model_"+lower(model.method);
-    predictions=cell(size(light.schedules));
-    fprintf('SIX_MODEL_RF_VALIDATION_START method=%s workers=%d windows=%d hop=%d\n', ...
-        model.method,pool.NumWorkers,N,model.hop_samples);
-    parfor i=1:numel(light.schedules)
-        predictions{i}=eba.streamPredictions(light.schedules{i},model,cfg,modelPath,true);
-        if mod(i,500)==0 || i==numel(light.schedules)
-            fprintf('SIX_MODEL_RF_VALIDATION method=%s sequence_index=%d/%d\n',model.method,i,numel(light.schedules));
+    predictions=cell(size(schedules));
+    fprintf('SIX_MODEL_RF_VALIDATION_START method=%s sequences=%d workers=%d windows=%d hop=%d\n', ...
+        model.method,numel(schedules),pool.NumWorkers,N,model.hop_samples);
+    parfor i=1:numel(schedules)
+        predictions{i}=eba.streamPredictions(schedules{i},model,cfg,modelPath,true);
+        if mod(i,100)==0 || i==numel(schedules)
+            fprintf('SIX_MODEL_RF_VALIDATION method=%s sequence_index=%d/%d\n',model.method,i,numel(schedules));
         end
     end
-    [report,details]=eba.evaluateStreamEvidence(light.schedules,predictions,settings,cfg);
+    [report,details]=eba.evaluateStreamEvidence(schedules,predictions,settings,cfg);
     report.method=model.method;report.classifier="RF";report.window_cycles=model.window_cycles;
     report.hop_samples=model.hop_samples;report.n_validation_families=numel(unique(F.family_id(F.split=="validation")));
     report.dataset_hash=fullHash;report.fit_family_count=numel(model.training_family_ids);
     report.calibration_family_count=numel(model.calibration_family_ids);
+    report.noise_snr_db=20;report.noise_realization=1;report.evaluation_commit=sha;
     eba.json(validationPath,report);save(detailsPath,'details','-v7.3');
     outIndex=outIndex+1;row=makeRow(model,report,modelPath,"RF",cfg);
     row.offline_macro_f1=offlineScore("RF",model.method,cfg);row.training_commit=sha;rows{outIndex}=row;
@@ -92,14 +112,15 @@ assert(height(summary)==6 && isequal(sort(summary.classifier),["RF";"RF";"RF";"S
     'eba:SixModelCoverage','The combined benchmark must retain three SVM and three RF candidates.');
 summary.complete=isfinite(summary.event_f1)&isfinite(summary.event_f1_ci_low)& ...
     isfinite(summary.false_alarms_per_minute)&isfinite(summary.matched_latency_s);
-assert(all(summary.complete),'eba:SixModelCoverage','Every candidate must have complete full validation.');
+assert(all(summary.complete),'eba:SixModelCoverage','Every candidate must have complete family-level validation.');
 csv=fullfile(folder,'six_model_stream_validation.csv');writetable(summary,csv);
-manifest=eba.manifest('six_model_stream_validation',cfg,struct('scope','six matched validation pipelines; test not accessed', ...
+manifest=eba.manifest('six_model_stream_validation',cfg,struct('scope','six matched validation pipelines; one paired 20 dB realization per each of 864 independent families; test not accessed', ...
     'candidates',summary(:,{'method','classifier','window_cycles','hop_samples'}), ...
     'heavy_track_rule','Top three RF by 12-class validation Macro F1; offline p95 latency measured and reported but not an exclusion gate', ...
     'light_track','Previously retained FFT/STFT/DWT SVM candidates', ...
     'cost_policy','All six candidates retained irrespective of RTF; latency, p95, p99, memory and size are reported as Pareto outcomes', ...
-    'validation_sequences',numel(light.schedules),'test_accessed',false),[artifacts;string(csv)]);
+    'validation_sequences',numel(schedules),'validation_families',864,'noise_snr_db',20, ...
+    'noise_realization',1,'test_accessed',false),[artifacts;string(csv)]);
 fprintf('SIX_MODEL_STREAMBENCH_PASS candidates=%d test_accessed=0 dataset_hash=%s\n',height(summary),fullHash);
 end
 
@@ -150,6 +171,6 @@ ok=status==0 && string(model.kind)=="RF" && string(model.method)==string(parent.
     isequal(string(model.training_family_ids(:)),string(fitFamilies(:))) && ...
     isequal(string(model.calibration_family_ids(:)),string(calFamilies(:))) && ...
     string(report.method)==string(parent.method) && string(report.classifier)=="RF" && ...
-    string(report.dataset_hash)==string(datasetHash) && report.n_sequences==6048 && ...
+    string(report.dataset_hash)==string(datasetHash) && report.n_sequences==864 && ...
     report.n_independent_clusters==864 && isfinite(report.f1) && isfinite(report.f1_ci_low);
 end
