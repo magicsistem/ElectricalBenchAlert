@@ -12,7 +12,6 @@ input=load(fullfile(cfg.output,'six_model_stream','streambench_inputs.mat'),'lig
 light=input.light;heavy=input.heavy;
 assert(isequal(string(heavy.summary.method(:)),["FFT";"ST";"CWT"]), ...
     'eba:SixModelHeavy','The RF track must contain the three fixed 12-class offline leaders.');
-light=load(fullfile(cfg.output,'reselection_stream_full_development.mat'),'models','reports','retained','summary','schedules');
 lightMethods=["FFT","STFT","DWT"];
 eba.requireCandidateCoverage(lightMethods,string(light.summary.method),'Retained light stream candidates');
 assert(numel(light.schedules)==864 && height(light.summary)==3,'eba:SixModelValidation', ...
