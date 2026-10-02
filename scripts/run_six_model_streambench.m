@@ -1,10 +1,10 @@
 function summary=run_six_model_streambench()
 %RUN_SIX_MODEL_STREAMBENCH Refit heavy RF finalists; reuse frozen light SVM finalists.
 cfg=eba.config();pool=gcp('nocreate');if isempty(pool)
-    cluster=parcluster('local');cluster.NumWorkers=8;pool=parpool(cluster,8);
+    cluster=parcluster('local');cluster.NumWorkers=8;pool=parpool(cluster,4);
 end
-assert(pool.NumWorkers==8,'eba:SixModelWorkers','The full benchmark requires the requested eight MATLAB workers.');
-fprintf('SIX_MODEL_WORKERS workers=%d\n',pool.NumWorkers);
+assert(pool.NumWorkers==4,'eba:SixModelWorkers','Heavy transforms use the empirically faster four-worker pool.');
+fprintf('SIX_MODEL_WORKERS workers=%d policy=4 physical cores; 8-worker A/B was slower\n',pool.NumWorkers);
 [status,sha]=system('git rev-parse HEAD');assert(status==0);sha=strtrim(sha);
 [~,dirty]=system('git status --porcelain --untracked-files=normal');
 assert(isempty(strtrim(dirty)),'eba:SixModelSource','A clean committed source tree is required.');
@@ -50,6 +50,7 @@ for method=lightMethods
     report.method=method;report.classifier="SVM";report.window_cycles=model.window_cycles;
     report.hop_samples=model.hop_samples;report.n_validation_families=864;
     report.dataset_hash=fullHash;report.noise_snr_db=20;report.noise_realization=1;report.evaluation_commit=sha;
+    report.evaluation_workers=pool.NumWorkers;
     reportPath=fullfile(folder,"validation_svm_"+lower(method)+".json");
     detailsPath=fullfile(folder,"details_svm_"+lower(method)+".mat");
     eba.json(reportPath,report);save(detailsPath,'details','-v7.3');
@@ -100,6 +101,7 @@ for m=1:numel(heavy.candidateSets)
     report.dataset_hash=fullHash;report.fit_family_count=numel(model.training_family_ids);
     report.calibration_family_count=numel(model.calibration_family_ids);
     report.noise_snr_db=20;report.noise_realization=1;report.evaluation_commit=sha;
+    report.evaluation_workers=pool.NumWorkers;
     eba.json(validationPath,report);save(detailsPath,'details','-v7.3');
     outIndex=outIndex+1;row=makeRow(model,report,modelPath,"RF",cfg);
     row.offline_macro_f1=offlineScore("RF",model.method,cfg);row.training_commit=sha;rows{outIndex}=row;
@@ -120,7 +122,9 @@ manifest=eba.manifest('six_model_stream_validation',cfg,struct('scope','six matc
     'light_track','Previously retained FFT/STFT/DWT SVM candidates', ...
     'cost_policy','All six candidates retained irrespective of RTF; latency, p95, p99, memory and size are reported as Pareto outcomes', ...
     'validation_sequences',numel(schedules),'validation_families',864,'noise_snr_db',20, ...
-    'noise_realization',1,'test_accessed',false),[artifacts;string(csv)]);
+    'noise_realization',1,'validation_workers',pool.NumWorkers, ...
+    'worker_policy','Four process workers beat eight on matched ST and CWT stream microbenchmarks', ...
+    'test_accessed',false),[artifacts;string(csv)]);
 fprintf('SIX_MODEL_STREAMBENCH_PASS candidates=%d test_accessed=0 dataset_hash=%s\n',height(summary),fullHash);
 end
 
