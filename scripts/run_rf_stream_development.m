@@ -5,7 +5,20 @@ cfg=eba.config();pool=gcp('nocreate');if isempty(pool)
 end
 fprintf('RF_STREAM_WORKERS workers=%d\n',pool.NumWorkers);
 F=eba.families(cfg.families_per_cell,cfg);F=F(F.split~="test",:);
-[small,cal]=eba.subsetFamilies(F,3,1);V=small(small.split=="validation",:);
+[small,cal]=eba.subsetFamilies(F,3,1);Vall=small(small.split=="validation",:);V=Vall([],:);
+% Balanced incomplete block: each event class x severity appears once;
+% duration strata rotate across cells. Final comparison keeps all 864 clusters.
+for cls=2:numel(cfg.classes)
+    for severity=1:3
+        duration=mod(cls+severity-2,4)+1;
+        ix=find(Vall.class_id==cls & Vall.severity_stratum==severity & ...
+            Vall.duration_stratum==duration,1);
+        assert(~isempty(ix),'eba:RFStreamScreen','The stratified temporal screen cell is missing.');
+        V=[V;Vall(ix,:)]; %#ok<AGROW>
+    end
+end
+assert(height(V)==3*(numel(cfg.classes)-1) && numel(unique(V.family_id))==height(V), ...
+    'eba:RFStreamScreen','The temporal screen must retain independent class/severity families.');
 % Heavy track is fixed from the 12-class RF offline ranking before stream validation.
 offline=readtable(fullfile(cfg.output,'combined_validation_rf_metrics.csv'),'TextType','string');
 allMethods=["FFT","STFT","DWT","CWT","ST"];
@@ -46,10 +59,10 @@ for m=1:numel(heavyMethods)
     end
 end
 windowSummary=vertcat(windowRows{:});
-% Keep the two best window lengths per RF representation for temporal validation.
+% Keep the best window per representation; full six-model selection is separate.
 top=cell(numel(heavyMethods),1);for m=1:numel(heavyMethods)
     q=windowSummary(windowSummary.method==heavyMethods(m),:);
-    [~,ix]=sortrows([-q.validation_window_macro_f1,q.window_cycles],[1 2]);top{m}=q.window_cycles(ix(1:min(2,height(q))));
+    [~,ix]=sortrows([-q.validation_window_macro_f1,q.window_cycles],[1 2]);top{m}=q.window_cycles(ix(1));
 end
 levels=[Inf 20];schedules=cell(height(V),2);
 for i=1:height(V),for z=1:2
@@ -124,12 +137,14 @@ save(fullfile(cfg.output,'rf_stream_development.mat'),'candidateSets','summary',
 writetable(summary,fullfile(cfg.output,'rf_stream_development.csv'));
 report=struct('status','PASS','heavy_methods',heavyMethods,'classifier','RF','hyperparameters',hp, ...
     'window_candidates',table2struct(windowSummary),'selected_candidates',table2struct(summary), ...
-    'scope','12-class RF ranking fixed from offline validation; window/state refinement uses training plus small held validation; test not loaded', ...
+    'scope','12-class RF ranking fixed from offline validation; five windows screened on all small validation cells; one best window per method and temporal state refined on 33 independent class-severity families with duration strata rotated and paired clean/20 dB schedules; full comparison uses 6,048 schedules and 864 clusters; test not loaded', ...
+    'temporal_screen_families',height(V),'temporal_screen_schedules',numel(schedules), ...
     'cost_policy','RTF remains a Pareto/reporting outcome and is not a feasibility exclusion');
 eba.json(fullfile(cfg.output,'rf_stream_development.json'),report);
 eba.manifest('rf_stream_development',cfg,struct('scope',report.scope,'methods',heavyMethods, ...
     'classifier','RF','hyperparameters',hp,'cost_policy',report.cost_policy, ...
-    'validation_families',height(V),'workers',pool.NumWorkers,'test_accessed',false), ...
+    'validation_families',height(V),'validation_schedules',numel(schedules), ...
+    'workers',pool.NumWorkers,'test_accessed',false), ...
     {fullfile(cfg.output,'rf_stream_development.csv'),fullfile(cfg.output,'rf_stream_development.json'), ...
     fullfile(cfg.output,'rf_stream_development.mat')});
 fprintf('RF_STREAM_DEVELOPMENT_PASS methods=%s test_accessed=0\n',strjoin(heavyMethods,','));
