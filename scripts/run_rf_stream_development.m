@@ -80,7 +80,11 @@ for m=1:numel(heavyMethods)
     localRows=cell(0,1);localCandidates=cell(0,1);
     for a=take(:).'
         cycles=q.window_cycles(a);w=find(cyclesGrid==cycles);model=screenModels{m,w};
-        modelPath=fullfile(folder,"screen_"+lower(model.method)+"_"+cycles+".mat");eba.saveModel(modelPath,model);
+        modelPath=fullfile(folder,"screen_"+lower(model.method)+"_"+cycles+".mat");
+        if isfile(modelPath)
+            saved=load(modelPath,'model');assert(isequaln(model.fitted,saved.model.fitted), ...
+                'eba:RFStreamResume','A saved screen model has different fitted weights.');model=saved.model;
+        else,eba.saveModel(modelPath,model);end
         minHop=max(1,round(model.window_samples*.25));model.hop_samples=minHop;
         fine=cell(size(schedules));
         parfor i=1:numel(schedules)
@@ -89,7 +93,7 @@ for m=1:numel(heavyMethods)
         for hopFraction=[.25 .5]
             hop=max(1,round(model.window_samples*hopFraction));
             predictions=cell(size(schedules));
-            for i=1:numel(schedules)
+            for i=1:size(schedules,1)
                 for z=1:2
                     wanted=model.window_samples:hop:schedules{i,z}.n_samples;
                     [ok,ix]=ismember(wanted,round(fine{i,z}.window_end_s*cfg.Fs));
