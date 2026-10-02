@@ -45,7 +45,7 @@ for m=1:numel(heavy.candidateSets)
     model=eba.fit(X(fitRows,:),P.class_id(fitRows),cfg,'RF',old.hyperparameters);
     model=eba.calibrate(model,X(calRows,:),P.class_id(calRows),P.family_id(calRows));
     model.method=old.method;model.parameters=old.parameters;model.window_samples=N;
-    model.window_cycles=old.window_cycles;model.hop_samples=parent.settings.hop_samples;
+    model.window_cycles=old.window_cycles;model.hop_samples=old.hop_samples;
     model.model_version="stream-full-rf-"+lower(old.method)+"-"+model.window_cycles;
     model.training_family_ids=unique(P.family_id(fitRows));model.calibration_family_ids=unique(P.family_id(calRows));
     model.training_dataset_hash=info.family_hash;model.training_git_commit=sha;
