@@ -1,0 +1,62 @@
+{
+  "schema_version": "2.0.0",
+  "status": "CONFIRMED",
+  "event_id": "six_model_confirmed_cwt_rf:event:000001",
+  "device_id": "simulated-device",
+  "sequence": 1,
+  "sequence_id": "six_model_confirmed_cwt_rf",
+  "class_id": 2,
+  "class": "voltage_sag",
+  "labels": [
+    "voltage_sag"
+  ],
+  "primary_label": "voltage_sag",
+  "severity": "medium",
+  "project_severity": "medium",
+  "estimated_start": 2.25,
+  "estimated_start_s": 2.25,
+  "sim_time_start_s": 2.25,
+  "confirmation_time": 3,
+  "confirmation_time_s": 3,
+  "last_supporting_window_end_s": 3,
+  "duration_so_far": 0.75,
+  "duration_so_far_s": 0.75,
+  "sim_time_end_s": null,
+  "duration_ms": null,
+  "evidence_score": 0.9486427878812983,
+  "confidence": 0.9486427878812983,
+  "confidence_calibrated": true,
+  "confidence_semantics": "minimum supporting-window score; not a calibrated event probability",
+  "supporting_windows": [
+    {
+      "window_start_s": 2.25,
+      "window_end_s": 2.75,
+      "decision_time_s": 2.75,
+      "class_id": 2,
+      "evidence_score": 0.9486427878812983
+    },
+    {
+      "window_start_s": 2.375,
+      "window_end_s": 2.875,
+      "decision_time_s": 2.875,
+      "class_id": 2,
+      "evidence_score": 0.99583653853438725
+    },
+    {
+      "window_start_s": 2.5,
+      "window_end_s": 3,
+      "decision_time_s": 3,
+      "class_id": 2,
+      "evidence_score": 0.98612441802170536
+    }
+  ],
+  "evidence_duration_s": 0.75,
+  "method_id": "0.2.0-development",
+  "method_version": "0.2.0-development",
+  "model_version": "stream-full-rf-cwt-30",
+  "dataset_version": "2.0.0",
+  "git_commit": "5cb610c01ca21c0f040f5abb69465a3f8212c220",
+  "country_profile": "not_implemented",
+  "regulatory_monitoring_status": "not_implemented",
+  "voltage_rms_pu_min": 0.49077676976412526
+}

@@ -33,15 +33,6 @@ for k=1:numel(artifacts)
     items(k).path=erase(path,[cfg.root filesep]);items(k).sha256=eba.hash(path,'file');
 end
 m.artifacts=items;
-latest=fullfile(cfg.output,'manifests',string(id)+'.json');history=fullfile(cfg.output,'manifests','history');
-if ~isfolder(history),mkdir(history);end
-% Preserve the actual previous bytes/provenance before updating the stable latest alias.
-if isfile(latest)
-    oldHash=eba.hash(latest,'file');oldPath=fullfile(history,string(id)+"_previous_"+oldHash+".json");
-    if ~isfile(oldPath),copyfile(latest,oldPath);else,assert(strcmp(eba.hash(oldPath,'file'),oldHash),'eba:ManifestMutation','Prior manifest history changed.');end
-end
-stamp=string(datetime('now','TimeZone','UTC','Format',"yyyyMMdd'T'HHmmssSSS"));
-recordHash=eba.hash(jsonencode(m));recordPath=fullfile(history,string(id)+"_"+stamp+"_"+recordHash+".json");
-assert(~isfile(recordPath),'eba:ManifestMutation','Immutable manifest record already exists.');
-eba.json(recordPath,m);eba.json(latest,m);
+latest=fullfile(cfg.output,'manifests',string(id)+'.json');
+eba.json(latest,m);
 end

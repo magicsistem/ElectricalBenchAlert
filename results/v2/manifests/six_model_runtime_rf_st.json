@@ -1,0 +1,742 @@
+{
+  "experiment_id": "six_model_runtime_rf_st",
+  "timestamp_utc": "2026-10-02T04:34:56Z",
+  "git_commit": "5cb610c01ca21c0f040f5abb69465a3f8212c220",
+  "repository_state_clean": true,
+  "MATLAB_version": "26.2.0.3386108 (R2026b)",
+  "toolbox_versions": [
+    {
+      "Name": "Aerospace Blockset",
+      "Version": "26.2",
+      "Release": "(R2026b)",
+      "Date": "22-May-2026"
+    },
+    {
+      "Name": "Aerospace Toolbox",
+      "Version": "26.2",
+      "Release": "(R2026b)",
+      "Date": "22-May-2026"
+    },
+    {
+      "Name": "Antenna Toolbox",
+      "Version": "26.2",
+      "Release": "(R2026b)",
+      "Date": "22-May-2026"
+    },
+    {
+      "Name": "Audio Toolbox",
+      "Version": "26.2",
+      "Release": "(R2026b)",
+      "Date": "22-May-2026"
+    },
+    {
+      "Name": "Bioinformatics Toolbox",
+      "Version": "26.2",
+      "Release": "(R2026b)",
+      "Date": "22-May-2026"
+    },
+    {
+      "Name": "Bluetooth Toolbox",
+      "Version": "26.2",
+      "Release": "(R2026b)",
+      "Date": "22-May-2026"
+    },
+    {
+      "Name": "C2000 Microcontroller Blockset",
+      "Version": "26.2",
+      "Release": "(R2026b)",
+      "Date": "22-May-2026"
+    },
+    {
+      "Name": "Communications Toolbox",
+      "Version": "26.2",
+      "Release": "(R2026b)",
+      "Date": "22-May-2026"
+    },
+    {
+      "Name": "Computer Vision Toolbox",
+      "Version": "26.2",
+      "Release": "(R2026b)",
+      "Date": "22-May-2026"
+    },
+    {
+      "Name": "Control System Toolbox",
+      "Version": "26.2",
+      "Release": "(R2026b)",
+      "Date": "22-May-2026"
+    },
+    {
+      "Name": "Curve Fitting Toolbox",
+      "Version": "26.2",
+      "Release": "(R2026b)",
+      "Date": "22-May-2026"
+    },
+    {
+      "Name": "DSP System Toolbox",
+      "Version": "26.2",
+      "Release": "(R2026b)",
+      "Date": "22-May-2026"
+    },
+    {
+      "Name": "Data Acquisition Toolbox",
+      "Version": "26.2",
+      "Release": "(R2026b)",
+      "Date": "22-May-2026"
+    },
+    {
+      "Name": "Database Toolbox",
+      "Version": "26.2",
+      "Release": "(R2026b)",
+      "Date": "22-May-2026"
+    },
+    {
+      "Name": "Datafeed Toolbox",
+      "Version": "26.2",
+      "Release": "(R2026b)",
+      "Date": "22-May-2026"
+    },
+    {
+      "Name": "Deep Learning Toolbox",
+      "Version": "26.2",
+      "Release": "(R2026b)",
+      "Date": "22-May-2026"
+    },
+    {
+      "Name": "Econometrics Toolbox",
+      "Version": "26.2",
+      "Release": "(R2026b)",
+      "Date": "22-May-2026"
+    },
+    {
+      "Name": "Financial Instruments Toolbox",
+      "Version": "26.2",
+      "Release": "(R2026b)",
+      "Date": "22-May-2026"
+    },
+    {
+      "Name": "Financial Toolbox",
+      "Version": "26.2",
+      "Release": "(R2026b)",
+      "Date": "22-May-2026"
+    },
+    {
+      "Name": "Fixed-Point Designer",
+      "Version": "26.2",
+      "Release": "(R2026b)",
+      "Date": "22-May-2026"
+    },
+    {
+      "Name": "Fuzzy Logic Toolbox",
+      "Version": "26.2",
+      "Release": "(R2026b)",
+      "Date": "22-May-2026"
+    },
+    {
+      "Name": "Global Optimization Toolbox",
+      "Version": "26.2",
+      "Release": "(R2026b)",
+      "Date": "22-May-2026"
+    },
+    {
+      "Name": "Image Acquisition Toolbox",
+      "Version": "26.2",
+      "Release": "(R2026b)",
+      "Date": "22-May-2026"
+    },
+    {
+      "Name": "Image Processing Toolbox",
+      "Version": "26.2",
+      "Release": "(R2026b)",
+      "Date": "22-May-2026"
+    },
+    {
+      "Name": "Industrial Communication Toolbox",
+      "Version": "26.2",
+      "Release": "(R2026b)",
+      "Date": "22-May-2026"
+    },
+    {
+      "Name": "Instrument Control Toolbox",
+      "Version": "26.2",
+      "Release": "(R2026b)",
+      "Date": "22-May-2026"
+    },
+    {
+      "Name": "MATLAB",
+      "Version": "26.2",
+      "Release": "(R2026b)",
+      "Date": "22-May-2026"
+    },
+    {
+      "Name": "MATLAB Coder",
+      "Version": "26.2",
+      "Release": "(R2026b)",
+      "Date": "22-May-2026"
+    },
+    {
+      "Name": "MATLAB Copilot",
+      "Version": "26.2",
+      "Release": "(R2026b)",
+      "Date": "22-May-2026"
+    },
+    {
+      "Name": "MATLAB Report Generator",
+      "Version": "26.2",
+      "Release": "(R2026b)",
+      "Date": "22-May-2026"
+    },
+    {
+      "Name": "MATLAB Test",
+      "Version": "26.2",
+      "Release": "(R2026b)",
+      "Date": "22-May-2026"
+    },
+    {
+      "Name": "Mapping Toolbox",
+      "Version": "26.2",
+      "Release": "(R2026b)",
+      "Date": "22-May-2026"
+    },
+    {
+      "Name": "Medical Imaging Toolbox",
+      "Version": "26.2",
+      "Release": "(R2026b)",
+      "Date": "22-May-2026"
+    },
+    {
+      "Name": "Mixed-Signal Blockset",
+      "Version": "26.2",
+      "Release": "(R2026b)",
+      "Date": "22-May-2026"
+    },
+    {
+      "Name": "Model Predictive Control Toolbox",
+      "Version": "26.2",
+      "Release": "(R2026b)",
+      "Date": "22-May-2026"
+    },
+    {
+      "Name": "Motor Control Blockset",
+      "Version": "26.2",
+      "Release": "(R2026b)",
+      "Date": "22-May-2026"
+    },
+    {
+      "Name": "Navigation Toolbox",
+      "Version": "26.2",
+      "Release": "(R2026b)",
+      "Date": "22-May-2026"
+    },
+    {
+      "Name": "Optimization Toolbox",
+      "Version": "26.2",
+      "Release": "(R2026b)",
+      "Date": "22-May-2026"
+    },
+    {
+      "Name": "Parallel Computing Toolbox",
+      "Version": "26.2",
+      "Release": "(R2026b)",
+      "Date": "22-May-2026"
+    },
+    {
+      "Name": "Partial Differential Equation Toolbox",
+      "Version": "26.2",
+      "Release": "(R2026b)",
+      "Date": "22-May-2026"
+    },
+    {
+      "Name": "Phased Array System Toolbox",
+      "Version": "26.2",
+      "Release": "(R2026b)",
+      "Date": "22-May-2026"
+    },
+    {
+      "Name": "Point Cloud Toolbox",
+      "Version": "26.2",
+      "Release": "(R2026b)",
+      "Date": "22-May-2026"
+    },
+    {
+      "Name": "Predictive Maintenance Toolbox",
+      "Version": "26.2",
+      "Release": "(R2026b)",
+      "Date": "22-May-2026"
+    },
+    {
+      "Name": "RF Blockset",
+      "Version": "26.2",
+      "Release": "(R2026b)",
+      "Date": "22-May-2026"
+    },
+    {
+      "Name": "RF PCB Toolbox",
+      "Version": "26.2",
+      "Release": "(R2026b)",
+      "Date": "22-May-2026"
+    },
+    {
+      "Name": "RF Toolbox",
+      "Version": "26.2",
+      "Release": "(R2026b)",
+      "Date": "22-May-2026"
+    },
+    {
+      "Name": "ROS Toolbox",
+      "Version": "26.2",
+      "Release": "(R2026b)",
+      "Date": "19-Jun-2026"
+    },
+    {
+      "Name": "Radar Toolbox",
+      "Version": "26.2",
+      "Release": "(R2026b)",
+      "Date": "22-May-2026"
+    },
+    {
+      "Name": "Raspberry Pi Blockset",
+      "Version": "26.2",
+      "Release": "(R2026b)",
+      "Date": "22-May-2026"
+    },
+    {
+      "Name": "Reinforcement Learning Toolbox",
+      "Version": "26.2",
+      "Release": "(R2026b)",
+      "Date": "22-May-2026"
+    },
+    {
+      "Name": "Requirements Toolbox",
+      "Version": "26.2",
+      "Release": "(R2026b)",
+      "Date": "22-May-2026"
+    },
+    {
+      "Name": "Risk Management Toolbox",
+      "Version": "26.2",
+      "Release": "(R2026b)",
+      "Date": "22-May-2026"
+    },
+    {
+      "Name": "Robotics System Toolbox",
+      "Version": "26.2",
+      "Release": "(R2026b)",
+      "Date": "22-May-2026"
+    },
+    {
+      "Name": "Robust Control Toolbox",
+      "Version": "26.2",
+      "Release": "(R2026b)",
+      "Date": "22-May-2026"
+    },
+    {
+      "Name": "STM32 Microcontroller Blockset",
+      "Version": "26.2",
+      "Release": "(R2026b)",
+      "Date": "22-May-2026"
+    },
+    {
+      "Name": "Satellite Communications Toolbox",
+      "Version": "26.2",
+      "Release": "(R2026b)",
+      "Date": "22-May-2026"
+    },
+    {
+      "Name": "Sensor Fusion and Tracking Toolbox",
+      "Version": "26.2",
+      "Release": "(R2026b)",
+      "Date": "22-May-2026"
+    },
+    {
+      "Name": "Signal Integrity Toolbox",
+      "Version": "26.2",
+      "Release": "(R2026b)",
+      "Date": "22-May-2026"
+    },
+    {
+      "Name": "Signal Processing Toolbox",
+      "Version": "26.2",
+      "Release": "(R2026b)",
+      "Date": "22-May-2026"
+    },
+    {
+      "Name": "SimBiology",
+      "Version": "26.2",
+      "Release": "(R2026b)",
+      "Date": "22-May-2026"
+    },
+    {
+      "Name": "SimEvents",
+      "Version": "26.2",
+      "Release": "(R2026b)",
+      "Date": "13-Nov-2025"
+    },
+    {
+      "Name": "Simscape",
+      "Version": "26.2",
+      "Release": "(R2026b)",
+      "Date": "22-May-2026"
+    },
+    {
+      "Name": "Simscape Battery",
+      "Version": "26.2",
+      "Release": "(R2026b)",
+      "Date": "22-May-2026"
+    },
+    {
+      "Name": "Simscape Driveline",
+      "Version": "26.2",
+      "Release": "(R2026b)",
+      "Date": "22-May-2026"
+    },
+    {
+      "Name": "Simscape Electrical",
+      "Version": "26.2",
+      "Release": "(R2026b)",
+      "Date": "22-May-2026"
+    },
+    {
+      "Name": "Simscape Fluids",
+      "Version": "26.2",
+      "Release": "(R2026b)",
+      "Date": "22-May-2026"
+    },
+    {
+      "Name": "Simscape Multibody",
+      "Version": "26.2",
+      "Release": "(R2026b)",
+      "Date": "22-May-2026"
+    },
+    {
+      "Name": "Simulink",
+      "Version": "26.2",
+      "Release": "(R2026b)",
+      "Date": "22-May-2026"
+    },
+    {
+      "Name": "Simulink 3D Animation",
+      "Version": "26.2",
+      "Release": "(R2026b)",
+      "Date": "22-May-2026"
+    },
+    {
+      "Name": "Simulink Check",
+      "Version": "26.2",
+      "Release": "(R2026b)",
+      "Date": "22-May-2026"
+    },
+    {
+      "Name": "Simulink Coder",
+      "Version": "26.2",
+      "Release": "(R2026b)",
+      "Date": "22-May-2026"
+    },
+    {
+      "Name": "Simulink Control Design",
+      "Version": "26.2",
+      "Release": "(R2026b)",
+      "Date": "22-May-2026"
+    },
+    {
+      "Name": "Simulink Copilot",
+      "Version": "26.2",
+      "Release": "(R2026b)",
+      "Date": "22-May-2026"
+    },
+    {
+      "Name": "Simulink Coverage",
+      "Version": "26.2",
+      "Release": "(R2026b)",
+      "Date": "22-May-2026"
+    },
+    {
+      "Name": "Simulink Design Optimization",
+      "Version": "26.2",
+      "Release": "(R2026b)",
+      "Date": "22-May-2026"
+    },
+    {
+      "Name": "Simulink Design Verifier",
+      "Version": "26.2",
+      "Release": "(R2026b)",
+      "Date": "22-May-2026"
+    },
+    {
+      "Name": "Simulink Desktop Real-Time",
+      "Version": "26.2",
+      "Release": "(R2026b)",
+      "Date": "22-May-2026"
+    },
+    {
+      "Name": "Simulink Fault Analyzer",
+      "Version": "26.2",
+      "Release": "(R2026b)",
+      "Date": "22-May-2026"
+    },
+    {
+      "Name": "Simulink Report Generator",
+      "Version": "26.2",
+      "Release": "(R2026b)",
+      "Date": "22-May-2026"
+    },
+    {
+      "Name": "Simulink Test",
+      "Version": "26.2",
+      "Release": "(R2026b)",
+      "Date": "22-May-2026"
+    },
+    {
+      "Name": "Simulink Variant Manager",
+      "Version": "26.2",
+      "Release": "(R2026b)",
+      "Date": "22-May-2026"
+    },
+    {
+      "Name": "SoC Blockset",
+      "Version": "26.2",
+      "Release": "(R2026b)",
+      "Date": "22-May-2026"
+    },
+    {
+      "Name": "Stateflow",
+      "Version": "26.2",
+      "Release": "(R2026b)",
+      "Date": "22-May-2026"
+    },
+    {
+      "Name": "Statistics and Machine Learning Toolbox",
+      "Version": "26.2",
+      "Release": "(R2026b)",
+      "Date": "11-Jun-2026"
+    },
+    {
+      "Name": "Symbolic Math Toolbox",
+      "Version": "26.2",
+      "Release": "(R2026b)",
+      "Date": "22-May-2026"
+    },
+    {
+      "Name": "System Composer",
+      "Version": "26.2",
+      "Release": "(R2026b)",
+      "Date": "22-May-2026"
+    },
+    {
+      "Name": "System Identification Toolbox",
+      "Version": "26.2",
+      "Release": "(R2026b)",
+      "Date": "22-May-2026"
+    },
+    {
+      "Name": "Text Analytics Toolbox",
+      "Version": "26.2",
+      "Release": "(R2026b)",
+      "Date": "22-May-2026"
+    },
+    {
+      "Name": "UAV Toolbox",
+      "Version": "26.2",
+      "Release": "(R2026b)",
+      "Date": "22-May-2026"
+    },
+    {
+      "Name": "Vehicle Network Toolbox",
+      "Version": "26.2",
+      "Release": "(R2026b)",
+      "Date": "22-May-2026"
+    },
+    {
+      "Name": "Visual Inspection Toolbox",
+      "Version": "26.2",
+      "Release": "(R2026b)",
+      "Date": "22-May-2026"
+    },
+    {
+      "Name": "Wavelet Toolbox",
+      "Version": "26.2",
+      "Release": "(R2026b)",
+      "Date": "22-May-2026"
+    },
+    {
+      "Name": "Wireless Testbench",
+      "Version": "26.2",
+      "Release": "(R2026b)",
+      "Date": "22-May-2026"
+    }
+  ],
+  "OS": "Linux 7.2.7-1-cachyos",
+  "CPU": "Architecture:                x86_64\n  CPU op-mode(s):            32-bit, 64-bit\n  Address sizes:             39 bits physical, 48 bits virtual\n  Byte Order:                Little Endian\nCPU(s):                      8\n  On-line CPU(s) list:       0-7\nVendor ID:                   GenuineIntel\n  Model name:                11th Gen Intel(R) Core(TM) i7-1165G7 @ 2.80GHz\n    CPU family:              6\n    Model:                   140\n    Thread(s) per core:      2\n    Core(s) per socket:      4\n    Socket(s):               1\n    Stepping:                1\n    Microcode version:       0xbe\n    CPU(s) scaling MHz:      48%\n    CPU max MHz:             4700.0000\n    CPU min MHz:             400.0000\n    BogoMIPS:                5606.40\n    Flags:                   fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pg\n                             e mca cmov pat pse36 clflush dts acpi mmx fxsr sse \n                             sse2 ss ht tm pbe syscall nx pdpe1gb rdtscp lm cons\n                             tant_tsc art arch_perfmon pebs bts rep_good nopl xt\n                             opology nonstop_tsc cpuid aperfmperf tsc_known_freq\n                              pni pclmulqdq dtes64 monitor ds_cpl vmx est tm2 ss\n                             se3 sdbg fma cx16 xtpr pdcm pcid sse4_1 sse4_2 x2ap\n                             ic movbe popcnt tsc_deadline_timer aes xsave avx f1\n                             6c rdrand lahf_lm abm 3dnowprefetch cpuid_fault epb\n                              cat_l2 cdp_l2 ssbd ibrs ibpb stibp ibrs_enhanced t\n                             pr_shadow flexpriority ept vpid ept_ad fsgsbase tsc\n                             _adjust bmi1 avx2 smep bmi2 erms invpcid rdt_a avx5\n                             12f avx512dq rdseed adx smap avx512ifma clflushopt \n                             clwb intel_pt avx512cd sha_ni avx512bw avx512vl xsa\n                             veopt xsavec xgetbv1 xsaves split_lock_detect user_\n                             shstk dtherm ida arat pln pts hwp hwp_notify hwp_ac\n                             t_window hwp_epp hwp_pkg_req vnmi avx512vbmi umip p\n                             ku ospke avx512_vbmi2 gfni vaes vpclmulqdq avx512_v\n                             nni avx512_bitalg avx512_vpopcntdq rdpid movdiri mo\n                             vdir64b fsrm avx512_vp2intersect md_clear ibt flush\n                             _l1d arch_capabilities\nVirtualization features:     \n  Virtualization:            VT-x\nCaches (sum of all):         \n  L1d:                       192 KiB (4 instances)\n  L1i:                       128 KiB (4 instances)\n  L2:                        5 MiB (4 instances)\n  L3:                        12 MiB (1 instance)\nNUMA:                        \n  NUMA node(s):              1\n  NUMA node0 CPU(s):         0-7\nVulnerabilities:             \n  Gather data sampling:      Mitigation; Microcode\n  Ghostwrite:                Not affected\n  Indirect target selection: Mitigation; Aligned branch/return thunks\n  Itlb multihit:             Not affected\n  L1tf:                      Not affected\n  Mds:                       Not affected\n  Meltdown:                  Not affected\n  Mmio stale data:           Not affected\n  Old microcode:             Not affected\n  Reg file data sampling:    Not affected\n  Retbleed:                  Not affected\n  Spec rstack overflow:      Not affected\n  Spec store bypass:         Mitigation; Speculative Store Bypass disabled via p\n                             rctl\n  Spectre v1:                Mitigation; usercopy/swapgs barriers and __user poi\n                             nter sanitization\n  Spectre v2:                Mitigation; Enhanced / Automatic IBRS; IBPB conditi\n                             onal; PBRSB-eIBRS SW sequence; BHI SW loop, KVM SW \n                             loop\n  Srbds:                     Not affected\n  Tsa:                       Not affected\n  Tsx async abort:           Not affected\n  Vmscape:                   Not affected",
+  "RAM": "total        used        free      shared  buff/cache   available\nMem:     33361797120  8678019072 21672243200   824778752  4377772032 24683778048\nSwap:    59131289600  6405521408 52725768192",
+  "dataset_version": "2.0.0",
+  "seed": 2.0260928E+7,
+  "split_seed": 928101,
+  "model_seed": 928201,
+  "stream_seed": 928301,
+  "feature_schema_version": "2.0.0",
+  "config_hash": "440bf3f4fb50536f86069bf6764beca57bba8704e18ec8697513ae76a2260323",
+  "extra": {
+    "classifier": "RF",
+    "method": "ST",
+    "shared_signal_sha256": "35a5efdb701305195ef839414d434d26fd3e739b00595ac0b25b598e7fee7970",
+    "shared_endpoints_sha256": "80885c0b9bf375c960038094a36d6d627a250de4a7ddbf2c10dd3bcb5bdc6133",
+    "repetitions": 100,
+    "warmups": 2
+  },
+  "dataset_hash": "535c34420bb8174b3baa77cfc36a3bf478e8d61e943a14e2507c21337a9efbf8",
+  "split_hash": "b9e3f0d5dc86d3c8130dc5ed6cb2261f1f089b6460ba36cd3bcfaf100f4a9138",
+  "method": "ST",
+  "parameters": {
+    "schema_version": "2.0.0",
+    "dataset_version": "2.0.0",
+    "method_version": "0.2.0-development",
+    "Fs": 10000,
+    "nominal_frequency_hz": 60,
+    "clip_duration_s": 1,
+    "master_seed": 2.0260928E+7,
+    "split_seed": 928101,
+    "model_seed": 928201,
+    "stream_seed": 928301,
+    "classes": [
+      "normal",
+      "voltage_sag",
+      "voltage_swell",
+      "interruption",
+      "harmonics",
+      "flicker",
+      "oscillatory_transient",
+      "impulsive_transient",
+      "notching",
+      "voltage_sag_harmonics",
+      "voltage_swell_harmonics",
+      "harmonics_flicker"
+    ],
+    "primary_class_count": 9,
+    "severity_strata": 3,
+    "duration_strata": 4,
+    "families_per_cell": 40,
+    "split_per_block": {
+      "train": 14,
+      "validation": 3,
+      "test": 3
+    },
+    "snr_db": [
+      30,
+      20,
+      10,
+      5,
+      0,
+      -5
+    ],
+    "noise_realizations": 3,
+    "noise_reference": "clean_disturbed_record_energy",
+    "fundamental_frequency_range_hz": [
+      59.9,
+      60.1
+    ],
+    "base_rms_range_pu": [
+      0.98,
+      1.02
+    ],
+    "minimum_context_s": 0.1,
+    "bootstrap_replicates": 10000,
+    "permutation_replicates": 10000,
+    "learning_train_families_per_cell": [
+      3,
+      6,
+      9,
+      14,
+      21,
+      28
+    ],
+    "learning_max_f1_gain": 0.01,
+    "learning_ci_half_width": 0.03,
+    "stream_window_cycles": [
+      3,
+      6,
+      12,
+      24,
+      30
+    ],
+    "stream_hop_fractions": [
+      0.25,
+      0.5
+    ],
+    "svm_grid": {
+      "kernel": [
+        "linear",
+        "gaussian"
+      ],
+      "box_constraint": [
+        0.1,
+        1,
+        10
+      ],
+      "kernel_scale": [
+        0.3,
+        1,
+        3,
+        10
+      ]
+    },
+    "rf_grid": {
+      "trees": [
+        100,
+        300
+      ],
+      "min_leaf": [
+        1,
+        5,
+        10
+      ]
+    },
+    "runtime_warmups": 2,
+    "runtime_repetitions": 100,
+    "stft": {
+      "window_samples": 500,
+      "overlap_fraction": 0.5,
+      "window": "hann"
+    },
+    "dwt": {
+      "wavelet": "db4",
+      "level": 7
+    },
+    "cwt": {
+      "wavelet": "Morse",
+      "voices": 6,
+      "frequency_limits_hz": [
+        30,
+        4000
+      ],
+      "boundary": "reflection"
+    },
+    "st": {
+      "frequency_limits_hz": [
+        30,
+        4000
+      ],
+      "log_frequencies": 32,
+      "sigma_factor": 1,
+      "truncate_sigma": 4
+    },
+    "feature_schema_version": "2.0.0",
+    "regulatory_monitoring_status": "not_implemented",
+    "classifier_hyperparameter_policy": "one shared configuration per classifier track; maximum mean validation Macro F1 across five representations; grid order breaks exact ties"
+  },
+  "classifier": "RF",
+  "hyperparameters": {},
+  "hash_scope": "dataset_hash: full canonical parameter families; split_hash: full family_id/split mapping; input subsets recorded separately",
+  "artifacts": [
+    {
+      "path": "results/v2/six_model_stream/runtime_rf_st.json",
+      "sha256": "7eea29d9370f16fcf395608b4927023a4b63414b87f767c5e98ceee28c07e6ca"
+    },
+    {
+      "path": "results/v2/six_model_stream/runtime_rf_st.csv",
+      "sha256": "1cd8636e59cbd17d48e037983e5fc359d76dc02b6cfae041258ca918138854b5"
+    },
+    {
+      "path": "results/v2/six_model_stream/model_rf_st.mat",
+      "sha256": "357327aead4e9b34525693a295cf3ca2c00e39f06d7d6f8425490a73455df8ef"
+    }
+  ]
+}

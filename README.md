@@ -1,12 +1,12 @@
 # ElectricalBenchAlert
 
-MATLAB research pipeline for synthetic 60 Hz electrical disturbance classification and continuous event confirmation.
+MATLAB benchmark of six continuous power quality event detection pipelines. This checkout contains the frozen validation run and only the source needed to inspect, verify, and reproduce it.
 
-## Validation-selected stream model
+## Frozen run
 
-The six-model comparison retains three light SVM pipelines and adds the three offline-leading RF pipelines. Under the quality-first rule, **CWT + RF** is selected for the simulated detector.
+The benchmark pairs FFT/STFT/DWT with SVM and FFT/ST/CWT with Random Forest across the same 864 validation families, at 20 dB with one noise realization per family. The original test split was inspected in an earlier superseded phase, so these results are validation evidence, not a confirmatory test.
 
-| Model | Event F1 [95% CI] | Recall | False alarms/min | Confirmation latency | p95 compute / hop | Model size |
+| Pipeline | Event F1 [95% CI] | Recall | False alarms/min | Detection latency | Compute p95 / 125 ms hop | Model size |
 |---|---:|---:|---:|---:|---:|---:|
 | FFT + SVM | 0.7093 [0.6800, 0.7379] | 0.5947 | 0.686 | 0.237 s | 0.116 | 2.66 MB |
 | STFT + SVM | 0.6926 [0.6625, 0.7220] | 0.5732 | 0.687 | 0.480 s | 0.131 | 2.67 MB |
@@ -15,40 +15,35 @@ The six-model comparison retains three light SVM pipelines and adds the three of
 | ST + RF | 0.7574 [0.7333, 0.7813] | 0.7551 | 1.997 | 0.357 s | 1.789 | 73.61 MB |
 | **CWT + RF** | **0.8031 [0.7784, 0.8270]** | 0.7210 | **0.624** | 0.468 s | **1.616** | 72.35 MB |
 
-Five of the six candidates remain on the Pareto front across event quality, false alarms, latency, compute cost, and model size; STFT-SVM is dominated. The selector has no latency or size exclusion: it maximizes the grouped-bootstrap lower Event F1 bound, then point F1, fewer false alarms, and shorter latency. A paired analysis across 864 validation families estimates CWT-RF minus FFT-RF at +0.0059 Event F1 (95% CI −0.0171 to +0.0289; Holm-adjusted p=0.5924). The two heavy leaders are statistically unresolved on Event F1. CWT-RF is selected by the declared rule; it offers higher precision and fewer false alarms, while FFT-RF has higher recall and lower confirmation latency.
+CWT-RF is selected by the predeclared rule: maximize the family-grouped bootstrap lower 95% Event F1 bound, then point F1, fewer false alarms, and lower detection latency. Latency and size do not exclude candidates. Paired uncertainty does not establish a significant Event F1 difference from FFT-RF: delta +0.0059 [−0.0171, +0.0289], Holm-adjusted p=0.5924. CWT-RF has higher precision and fewer false alarms; FFT-RF has higher recall and shorter detection latency.
 
-CWT-RF is 72.35 MB and its p95 compute time is 202 ms for a 125 ms hop (RTF 1.616). It does not sustain real-time processing on the measured laptop; this cost is accepted for the current simulation milestone and does not make it embedded-ready. The confirmed-event demonstration reaches NORMAL → SUSPECTED → CONFIRMED for a validation sag in 0.2665 s. This single sequence checks integration, not generalization.
+The selected model is 72.35 MB. Its p95 processing time is 202 ms for a 125 ms hop (RTF 1.616), so it does not sustain real-time throughput on the measured laptop. That compute cost is accepted for this simulation benchmark and remains a deployment limitation. The deterministic confirmation example reaches NORMAL → SUSPECTED → CONFIRMED for a validation sag in 0.2665 s, with zero false alarms in that sequence; this checks integration, not generalization.
 
-Temporal evaluation covers one paired 20 dB noise realization per family (864 validation families, 792 true events). The original test split was inspected during a superseded phase, so these validation results do not constitute an untouched confirmatory test or justify a confirmatory v1.0.0 release. This is synthetic disturbance research, not regulatory compliance measurement.
+## Reproduce and verify
 
-## Requirements and tests
+Requirements: MATLAB R2026b, Signal Processing Toolbox, Wavelet Toolbox, Statistics and Machine Learning Toolbox, and Parallel Computing Toolbox. The checked-in `results/v2` package contains the exact schedules, models, metrics, manifests, and demo outputs for this run.
 
-MATLAB R2026b with Signal Processing Toolbox, Wavelet Toolbox, Statistics and Machine Learning Toolbox, and Deep Learning Toolbox.
+From the repository root:
 
-    git clone https://github.com/magicsistem/ElectricalBenchAlert.git
-    cd ElectricalBenchAlert
-    matlab -batch "disp(version); ver"
-    matlab -batch "startup; run_all_tests"
+```sh
+matlab -batch "disp(version); ver"
+matlab -batch "startup; run_all_tests"
+matlab -batch "startup; addpath('scripts'); verify_six_model_streambench; verify_six_model_selection"
+matlab -batch "startup; addpath('scripts'); run_six_model_paired_events"
+matlab -batch "startup; addpath('scripts'); run_selected_six_model_demo"
+```
 
-The current local MATLAB suite passed 9/9 suites. Research artifacts and fitted models are stored under ignored results/ and data/generated/ paths and are not bundled in this source checkout; complete reproduction from a clean clone therefore requires those artifacts or the full generation workflow.
+To rerun the six model validation and measurements, use a clean Git checkout with the bundled run inputs and execute:
 
-With the required local dataset and model artifacts available, reproduce the comparison, runtime, statistical analysis, and demo:
+```sh
+matlab -batch "startup; addpath('scripts'); run_six_model_streambench"
+matlab -batch "startup; addpath('scripts'); run_six_model_runtime('SVM','FFT')"
+matlab -batch "startup; addpath('scripts'); run_six_model_runtime('SVM','STFT')"
+matlab -batch "startup; addpath('scripts'); run_six_model_runtime('SVM','DWT')"
+matlab -batch "startup; addpath('scripts'); run_six_model_runtime('RF','FFT')"
+matlab -batch "startup; addpath('scripts'); run_six_model_runtime('RF','ST')"
+matlab -batch "startup; addpath('scripts'); run_six_model_runtime('RF','CWT')"
+matlab -batch "startup; addpath('scripts'); run_six_model_selection; run_six_model_paired_events; verify_six_model_streambench; verify_six_model_selection; run_selected_six_model_demo"
+```
 
-    matlab -batch "startup; addpath('scripts'); run_six_model_streambench"
-    matlab -batch "startup; addpath('scripts'); run_six_model_runtime('RF','FFT')"
-    matlab -batch "startup; addpath('scripts'); run_six_model_runtime('RF','ST')"
-    matlab -batch "startup; addpath('scripts'); run_six_model_runtime('RF','CWT')"
-    matlab -batch "startup; addpath('scripts'); run_six_model_selection; verify_six_model_streambench; verify_six_model_selection"
-    matlab -batch "startup; addpath('scripts'); run_six_model_paired_events"
-    matlab -batch "startup; addpath('scripts'); run_selected_six_model_demo"
-
-If the full development artifacts have been regenerated, prepare the reduced 864-family input package with prepare_six_model_streambench_inputs before running the streambench.
-
-## Scientific scope
-
-- Offline DSP comparison: FFT, STFT, DWT, CWT, and band-limited S-Transform with a common feature protocol and controlled SVM; Random Forest is a sensitivity classifier. Separate raw-waveform CNN and TCN baselines are reported.
-- Dataset v2: 5,760 independent scenario families, 109,440 clean/noisy derivatives, nine primary disturbance classes and three declared closed-set composites. All derivatives remain within their family split.
-- Continuous detection: synthetic signal generation, sliding windows, event matching, latency, false alarms, and the NORMAL → SUSPECTED → CONFIRMED state path.
-- The project does not calculate regulatory Pst or claim compliance with Ecuadorian or Peruvian power-quality regulations.
-- The earlier 630-record waveform set was unavailable; its hashes cannot reconstruct missing samples. The nine MAT fixtures remain references; dataset v2 is a separate MATLAB generation.
-- MQTT, broker, ESP32, Wokwi, Flutter, networking, and mobile notifications are outside this phase.
+Runtime results depend on hardware and are measured in fresh MATLAB processes with a shared signal, shared decision endpoints, two warmups, and 100 repetitions. The checked-in manifests retain the original environment and artifact hashes.

@@ -7,7 +7,7 @@ __pycache__/
 local_docs/
 .claude/settings.local.json
 .unlazy-hook-state.json
-results/
+results/v2/stream_prediction_cache/
 data/generated/
 experiments/generated/
 *.log

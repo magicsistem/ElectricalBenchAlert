@@ -1,0 +1,2 @@
+class,physical_start_s,estimated_start_s,confirmation_time_s,detection_latency_s,minimum_supporting_window_score,supporting_windows,false_alarms
+voltage_sag,2.7335,2.25,3,0.2665,0.948642787881298,3,0
