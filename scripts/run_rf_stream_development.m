@@ -3,6 +3,8 @@ function report=run_rf_stream_development()
 cfg=eba.config();pool=gcp('nocreate');if isempty(pool)
     c=parcluster('local');c.NumWorkers=8;pool=parpool(c,8);
 end
+[status,gitCommit]=system('git rev-parse HEAD');assert(status==0,'eba:RFStreamCommit','Git commit is unavailable.');
+gitCommit=strtrim(gitCommit);
 fprintf('RF_STREAM_WORKERS workers=%d\n',pool.NumWorkers);
 F=eba.families(cfg.families_per_cell,cfg);F=F(F.split~="test",:);
 [small,cal]=eba.subsetFamilies(F,3,1);Vall=small(small.split=="validation",:);V=Vall([],:);
@@ -72,7 +74,8 @@ end,end
 statCfg=cfg;statCfg.temporal_bootstrap_replicates=0;
 settings=struct('threshold_on',.7,'threshold_off',.5,'min_windows',2,'min_evidence_s',1/60, ...
     'recovery_windows',2,'refractory_s',0,'classes',cfg.classes,'method_version',cfg.method_version, ...
-    'dataset_version',cfg.dataset_version,'confidence_calibrated',true,'sequence_id','rf-screen');
+    'dataset_version',cfg.dataset_version,'git_commit',gitCommit, ...
+    'confidence_calibrated',true,'sequence_id','rf-screen');
 rows=cell(0,1);candidateSets=cell(numel(heavyMethods),1);folder=fullfile(cfg.output,'rf_stream_candidates');
 if ~isfolder(folder),mkdir(folder);end
 for m=1:numel(heavyMethods)
