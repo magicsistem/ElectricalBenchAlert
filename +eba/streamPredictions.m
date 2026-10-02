@@ -48,12 +48,19 @@ end
 result=table('Size',[numel(ends) 10],'VariableTypes',[repmat({'double'},1,9),{'string'}], ...
     'VariableNames',{'window_start_s','window_end_s','decision_time_s','class_id','confidence', ...
     'feature_time_s','classification_time_s','voltage_rms_pu_min','severity_time_s','severity'});
+% Render each deterministic sample once; overlapping windows are views of this sequence.
+signal=eba.continuousSignal(schedule,(0:schedule.n_samples-1)',cfg);
+featureMatrix=zeros(numel(ends),numel(model.mean));featureTimes=zeros(numel(ends),1);
 for w=1:numel(ends)
-    idx=(ends(w)-N:ends(w)-1)';x=eba.continuousSignal(schedule,idx,cfg);
-    timer=tic;v=eba.features(x,cfg.Fs,model.method,model.parameters);tf=toc(timer);
-    timer=tic;[label,confidence]=eba.predict(model,v);tc=toc(timer);
+    idx=(ends(w)-N:ends(w)-1)';x=signal(idx+1);
+    timer=tic;featureMatrix(w,:)=eba.features(x,cfg.Fs,model.method,model.parameters);featureTimes(w)=toc(timer);
+end
+timer=tic;[labels,confidences]=eba.predict(model,featureMatrix);classificationPerWindow=toc(timer)/numel(ends);
+for w=1:numel(ends)
+    idx=(ends(w)-N:ends(w)-1)';x=signal(idx+1);label=labels(w);confidence=confidences(w);
     timer=tic;[grade,physical]=eba.severity(x,cfg.classes(label),cfg.Fs);ts=toc(timer);
-    result(w,:)={idx(1)/cfg.Fs,ends(w)/cfg.Fs,ends(w)/cfg.Fs,label,confidence,tf,tc,physical.voltage_rms_pu_min,ts,grade};
+    result(w,:)={idx(1)/cfg.Fs,ends(w)/cfg.Fs,ends(w)/cfg.Fs,label,confidence, ...
+        featureTimes(w),classificationPerWindow,physical.voltage_rms_pu_min,ts,grade};
 end
 assert(all(isfinite(result{:,vartype('numeric')}),'all'),'eba:StreamPrediction','Nonfinite window evidence.');
 if useCache
