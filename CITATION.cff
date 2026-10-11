@@ -3,7 +3,14 @@ message: Please cite this software when using its scientific code or generated r
 type: software
 title: ElectricalBenchAlert
 authors:
-  - name: ElectricalBenchAlert contributors
+  - given-names: Miguel Jhosua
+    family-names: Benavides Castillo
+  - given-names: Jesse Berenice
+    family-names: Correa Reyes
+  - given-names: Tomas Wesly
+    family-names: Ponce Moscoso
+  - given-names: Alvaro Dario
+    family-names: Mendez Patilla
 repository-code: https://github.com/magicsistem/ElectricalBenchAlert
 abstract: Reproducible MATLAB research comparing electrical disturbance representations and detecting confirmed synthetic events under continuous window processing.
 keywords:

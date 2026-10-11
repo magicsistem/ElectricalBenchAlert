@@ -8,7 +8,7 @@ fprintf('SIX_MODEL_WORKERS workers=%d policy=4 physical cores; 8-worker A/B was 
 [status,sha]=system('git rev-parse HEAD');assert(status==0);sha=strtrim(sha);
 [~,dirty]=system('git status --porcelain --untracked-files=normal');
 assert(isempty(strtrim(dirty)),'eba:SixModelSource','A clean committed source tree is required.');
-input=load(fullfile(cfg.output,'six_model_stream','streambench_inputs.mat'),'light','heavy');
+input=load(fullfile(cfg.output,'inputs','streambench_inputs.mat'),'light','heavy');
 light=input.light;heavy=input.heavy;
 assert(isequal(string(heavy.summary.method(:)),["FFT";"ST";"CWT"]), ...
     'eba:SixModelHeavy','The RF track must contain the three fixed 12-class offline leaders.');
@@ -32,14 +32,14 @@ assert(isempty(intersect(fitFamilies,calFamilies)) && ~any(F.split=="test"), ...
 fullHash=eba.hash(jsonencode(table2struct(F)));
 fitFamilies=unique(F.family_id(F.split=="train" & ~ismember(F.family_id,cal)));
 calFamilies=unique(F.family_id(F.split=="train" & ismember(F.family_id,cal)));
-folder=fullfile(cfg.output,'six_model_stream');if ~isfolder(folder),mkdir(folder);end
+folder=fullfile(cfg.output,'metrics');if ~isfolder(folder),mkdir(folder);end
 rows=cell(6,1);artifacts=strings(0,1);outIndex=0;
 % Re-evaluate light finalists on the same 20 dB schedule for every family.
 for method=lightMethods
     m=find(string(light.summary.method)==method);outIndex=outIndex+1;
     model=light.models{m};retained=light.retained{m};settings=retained.settings;
     settings.model_version=model.model_version;settings.git_commit=model.training_git_commit;
-    modelPath=fullfile(cfg.output,'stream_models',"reselection_stream_full_"+lower(method)+".mat");
+    modelPath=fullfile(cfg.output,'models',"reselection_stream_full_"+lower(method)+".mat");
     saved=load(modelPath,'model');assert(string(model.kind)=="SVM" && isequaln(model.fitted,saved.model.fitted));
     predictions=cell(size(schedules));
     fprintf('SIX_MODEL_SVM_VALIDATION_START method=%s sequences=%d workers=%d\n',method,numel(schedules),pool.NumWorkers);
@@ -61,7 +61,7 @@ end
 % Refit the RF candidates on every accepted training family, reserving calibration families.
 for m=1:numel(heavy.candidateSets)
     parent=heavy.candidateSets{m};old=parent.model;N=old.window_samples;
-    modelPath=fullfile(folder,"model_rf_"+lower(old.method)+".mat");
+    modelPath=fullfile(cfg.output,'models',"model_rf_"+lower(old.method)+".mat");
     validationPath=fullfile(folder,"validation_rf_"+lower(old.method)+".json");
     detailsPath=fullfile(folder,"details_rf_"+lower(old.method)+".mat");
     [model,report,resumed]=resumeRF(modelPath,validationPath,detailsPath,old,fullHash,fitFamilies,calFamilies);
@@ -144,7 +144,7 @@ D=dir(path);row=table(string(model.method),string(classifier),model.window_cycle
     'false_alarms_ci_high','mean_iou','iou_ci_low','iou_ci_high','matched_latency_s','latency_ci_low','latency_ci_high', ...
     'start_error_s','start_error_ci_low','start_error_ci_high','end_error_s','end_error_ci_low','end_error_ci_high', ...
     'runtime_p95_s','stream_RTF_p95','peak_process_RSS_bytes','model_bytes','fit_time_s','fit_families'});
-runtimePath=fullfile(cfg.output,'six_model_stream',"runtime_"+lower(string(classifier))+"_"+lower(string(model.method))+".json");
+runtimePath=fullfile(cfg.output,'runtime',"runtime_"+lower(string(classifier))+"_"+lower(string(model.method))+".json");
 if isfile(runtimePath)
     run=jsondecode(fileread(runtimePath));row.runtime_p95_s=run.total_p95_s;
     row.stream_RTF_p95=run.streaming_real_time_factor_p95;row.peak_process_RSS_bytes=run.peak_process_RSS_bytes;
@@ -153,7 +153,7 @@ end
 
 function value=offlineScore(classifier,method,cfg)
 if classifier=="SVM",name='combined_validation_svm_metrics.csv';else,name='combined_validation_rf_metrics.csv';end
-T=readtable(fullfile(cfg.output,name),'TextType','string');ix=T.method==string(method);
+T=readtable(fullfile(cfg.output,'metrics',name),'TextType','string');ix=T.method==string(method);
 assert(nnz(ix)==1,'eba:SixModelOffline','Offline score missing or duplicated.');value=T.macro_f1(ix);
 end
 function [model,report,ok]=resumeRF(modelPath,reportPath,detailsPath,parent,datasetHash,fitFamilies,calFamilies)

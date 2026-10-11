@@ -1,6 +1,6 @@
 function T=run_six_model_paired_events()
 %RUN_SIX_MODEL_PAIRED_EVENTS Family-paired bootstrap and swap tests for event F1.
-cfg=eba.config();folder=fullfile(cfg.output,'six_model_stream');
+cfg=eba.config();folder=fullfile(cfg.output,'metrics');
 S=readtable(fullfile(folder,'six_model_stream_validation.csv'),'TextType','string');
 methods=S.method+"_"+S.classifier;K=864;B=10000;Y=zeros(K,3,height(S));families=strings(K,1);inputs=strings(height(S)+1,1);
 inputs(1)=fullfile(folder,'six_model_stream_validation.csv');

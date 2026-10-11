@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased — Repository layout
+
+- Flattened `results/v2` into `results/inputs`, `models`, `metrics`, `runtime`, `demo` and `manifests`; caches now go to the ignored `results/cache/`. Scripts point to the new locations. No experiment was rerun and no result file changed; manifests keep the original `results/v2` paths they recorded.
+- Listed the four project authors in `CITATION.cff`.
+- The manuscript evidence exporter (`Paper/scripts/extract_evidence.m`) remains pinned to snapshot `8eec7c6`, which keeps the original `results/v2` layout.
+
 ## Unreleased — Six-model validation update
 
 - Retained the three light stream candidates (FFT/STFT/DWT + SVM) and added the three best offline RF candidates (FFT/ST/CWT).

@@ -1,6 +1,6 @@
 function report=run_six_model_selection()
 %RUN_SIX_MODEL_SELECTION Select among six family-level models without an RTF cutoff.
-cfg=eba.config();path=fullfile(cfg.output,'six_model_stream','six_model_stream_validation.csv');
+cfg=eba.config();path=fullfile(cfg.output,'metrics','six_model_stream_validation.csv');
 assert(isfile(path),'eba:SixSelectionInputs','Run the six-model full validation first.');
 T=readtable(path,'TextType','string');assert(height(T)==6 && all(T.complete), ...
     'eba:SixSelectionCoverage','All six stream candidates must have full validation.');
@@ -8,17 +8,17 @@ assert(sum(T.classifier=="SVM")==3&&sum(T.classifier=="RF")==3, ...
     'eba:SixSelectionTrack','Selection must retain the three light SVM and three heavy RF models.');
 signalHashes=strings(6,1);endpointHashes=strings(6,1);runtimeFiles=strings(6,1);modelFiles=strings(6,1);
 for i=1:height(T)
-    runtimeFile=fullfile(cfg.output,'six_model_stream',"runtime_"+lower(T.classifier(i))+"_"+lower(T.method(i))+".json");
-    if T.classifier(i)=="SVM",modelFile=fullfile(cfg.output,'stream_models',"reselection_stream_full_"+lower(T.method(i))+".mat");
-    else,modelFile=fullfile(cfg.output,'six_model_stream',"model_rf_"+lower(T.method(i))+".mat");end
+    runtimeFile=fullfile(cfg.output,'runtime',"runtime_"+lower(T.classifier(i))+"_"+lower(T.method(i))+".json");
+    if T.classifier(i)=="SVM",modelFile=fullfile(cfg.output,'models',"reselection_stream_full_"+lower(T.method(i))+".mat");
+    else,modelFile=fullfile(cfg.output,'models',"model_rf_"+lower(T.method(i))+".mat");end
     assert(isfile(runtimeFile)&&isfile(modelFile),'eba:SixSelectionRuntime','Every model needs a fresh-session runtime run.');
     R=jsondecode(fileread(runtimeFile));model=load(modelFile,'model');D=dir(modelFile);
     assert(string(model.model.kind)==T.classifier(i)&&string(model.model.method)==T.method(i)&& ...
         D.bytes>0,'eba:SixSelectionIdentity','Runtime model identity does not match the validation row.');
     if T.classifier(i)=="SVM"
-        reportFile=fullfile(cfg.output,'six_model_stream',"validation_svm_"+lower(T.method(i))+".json");
+        reportFile=fullfile(cfg.output,'metrics',"validation_svm_"+lower(T.method(i))+".json");
     else
-        reportFile=fullfile(cfg.output,'six_model_stream',"validation_rf_"+lower(T.method(i))+".json");
+        reportFile=fullfile(cfg.output,'metrics',"validation_rf_"+lower(T.method(i))+".json");
     end
     V=jsondecode(fileread(reportFile));
     assert(abs(V.f1-T.event_f1(i))<1e-12 && V.n_sequences==864 && ...
@@ -48,8 +48,8 @@ report=struct('status','PASS','scope','12-class validation; six matched pipeline
     'rule','No latency or model-size exclusion. All complete candidates remain eligible; report the Pareto front in Event F1, false alarms/minute, matched latency, RTF and model size; select the largest grouped-family/schedule bootstrap 95% lower Event F1 bound, then point Event F1, then fewer false alarms and shorter latency.', ...
     'runtime_signal_sha256',signalHashes(1),'runtime_endpoints_sha256',endpointHashes(1), ...
     'test_accessed',false,'rows',table2struct(T),'runtime_files',runtimeFiles,'model_files',modelFiles);
-out=fullfile(cfg.output,'six_model_stream','six_model_selection.csv');writetable(T,out);
-json=fullfile(cfg.output,'six_model_stream','six_model_selection.json');eba.json(json,report);
+out=fullfile(cfg.output,'metrics','six_model_selection.csv');writetable(T,out);
+json=fullfile(cfg.output,'metrics','six_model_selection.json');eba.json(json,report);
 eba.manifest('six_model_selection',cfg,struct('scope',report.scope,'selected_method',report.selected_method, ...
     'selected_classifier',report.selected_classifier,'selection_rule',report.rule, ...
     'runtime_signal_sha256',signalHashes(1),'runtime_endpoints_sha256',endpointHashes(1), ...

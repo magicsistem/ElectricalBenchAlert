@@ -1,18 +1,18 @@
 function report=run_selected_six_model_demo()
 %RUN_SELECTED_SIX_MODEL_DEMO Reproduce one confirmed validation sag with the six-track winner.
-cfg=eba.config();selectionPath=fullfile(cfg.output,'six_model_stream','six_model_selection.json');
+cfg=eba.config();selectionPath=fullfile(cfg.output,'metrics','six_model_selection.json');
 selection=jsondecode(fileread(selectionPath));assert(strcmp(selection.status,'PASS')&&~selection.test_accessed, ...
     'eba:SixDemoSelection','A completed validation-only six-model selection is required.');
 method=string(selection.selected_method);classifier=string(selection.selected_classifier);
 if classifier=="SVM"
-    modelPath=fullfile(cfg.output,'stream_models',"reselection_stream_full_"+lower(method)+".mat");
-    input=load(fullfile(cfg.output,'six_model_stream','streambench_inputs.mat'),'light');
+    modelPath=fullfile(cfg.output,'models',"reselection_stream_full_"+lower(method)+".mat");
+    input=load(fullfile(cfg.output,'inputs','streambench_inputs.mat'),'light');
     ix=find(string(input.light.summary.method)==method);
     assert(isscalar(ix),'eba:SixDemoSettings','Retained SVM temporal settings are missing.');
     settings=input.light.retained{ix}.settings;
 else
-    modelPath=fullfile(cfg.output,'six_model_stream',"model_rf_"+lower(method)+".mat");
-    input=load(fullfile(cfg.output,'six_model_stream','streambench_inputs.mat'),'heavy');
+    modelPath=fullfile(cfg.output,'models',"model_rf_"+lower(method)+".mat");
+    input=load(fullfile(cfg.output,'inputs','streambench_inputs.mat'),'heavy');
     ix=find(string(cellfun(@(q)q.model.method,input.heavy.candidateSets,'UniformOutput',false))==method);
     assert(isscalar(ix),'eba:SixDemoSettings','Selected RF temporal settings are missing.');
     settings=input.heavy.candidateSets{ix}.settings;
@@ -34,7 +34,7 @@ for i=1:height(V)
 end
 assert(found,'eba:SixDemoConfirmation','The selected six-track model did not confirm a matching validation sag.');
 event=result.confirmed_events(1);truth=result.truth;latency=event.confirmation_time_s-truth.start_s;
-folder=fullfile(cfg.output,'six_model_stream',"confirmed_demo_"+lower(method)+"_"+lower(classifier));
+folder=fullfile(cfg.output,'demo');
 if ~isfolder(folder),mkdir(folder);end
 paths=[string(fullfile(folder,'confirmed_event.json'));string(fullfile(folder,'ground_truth.csv')); ...
     string(fullfile(folder,'window_predictions.csv'));string(fullfile(folder,'results.mat')); ...

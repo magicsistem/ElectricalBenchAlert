@@ -19,9 +19,28 @@ CWT-RF is selected by the predeclared rule: maximize the family-grouped bootstra
 
 The selected model is 72.35 MB. Its p95 processing time is 211 ms for a 125 ms hop (RTF 1.688), so it does not sustain real-time throughput on the measured laptop. That compute cost is accepted for this simulation benchmark and remains a deployment limitation. The deterministic confirmation example reaches NORMAL → SUSPECTED → CONFIRMED for a validation sag in 0.2665 s, with zero false alarms in that sequence; this checks integration, not generalization.
 
+## Repository layout
+
+```text
++eba/        MATLAB package with the method (called as eba.<function>)
+scripts/     run_* drivers and verify_* checks
+tests/       MATLAB test suites (run_all_tests)
+config/      research_v2.json, the authoritative configuration
+contracts/   JSON schema of the confirmed event
+results/
+  inputs/    frozen validation workload (streambench_inputs.mat)
+  models/    serialized SVM and RF models
+  metrics/   validation metrics, selection and paired contrasts
+  runtime/   matched runtime measurements
+  demo/      confirmed-event demonstration with CWT-RF
+  manifests/ provenance manifests of each run
+```
+
+Manifests and `results/metrics/six_model_selection.json` were written before the results were reorganized, so they record the original `results/v2/...` locations. File contents and SHA-256 values are unchanged.
+
 ## Reproduce and verify
 
-Requirements: MATLAB R2026b, Signal Processing Toolbox, Wavelet Toolbox, Statistics and Machine Learning Toolbox, and Parallel Computing Toolbox. The checked-in `results/v2` package contains the exact schedules, models, metrics, manifests, and demo outputs for this run.
+Requirements: MATLAB R2026b, Signal Processing Toolbox, Wavelet Toolbox, Statistics and Machine Learning Toolbox, and Parallel Computing Toolbox. The checked-in `results/` package contains the exact schedules, models, metrics, manifests, and demo outputs for this run.
 
 From the repository root:
 

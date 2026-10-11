@@ -1,7 +1,7 @@
 function verify_six_model_selection()
 %VERIFY_SIX_MODEL_SELECTION Check all six candidates, shared runtime and selected identity.
-cfg=eba.config();csv=fullfile(cfg.output,'six_model_stream','six_model_selection.csv');
-json=fullfile(cfg.output,'six_model_stream','six_model_selection.json');T=readtable(csv,'TextType','string');R=jsondecode(fileread(json));
+cfg=eba.config();csv=fullfile(cfg.output,'metrics','six_model_selection.csv');
+json=fullfile(cfg.output,'metrics','six_model_selection.json');T=readtable(csv,'TextType','string');R=jsondecode(fileread(json));
 selected=logical(T.selected);
 assert(height(T)==6&&sum(selected)==1&&all(T.complete)&&all(isfinite(T.runtime_p95_s))&& ...
     sum(T.classifier=="RF")==3&&sum(T.classifier=="SVM")==3&&~R.test_accessed&& ...

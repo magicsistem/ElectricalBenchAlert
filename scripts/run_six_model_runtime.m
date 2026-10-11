@@ -5,10 +5,10 @@ assert(any((classifier=="SVM" & method==["FFT","STFT","DWT"]) | ...
     (classifier=="RF" & method==["FFT","ST","CWT"])), ...
     'eba:SixRuntimeCandidate','Candidate is outside the fixed six-model comparison.');
 if classifier=="SVM"
-    path=fullfile(cfg.output,'stream_models',"reselection_stream_full_"+lower(method)+".mat");
+    path=fullfile(cfg.output,'models',"reselection_stream_full_"+lower(method)+".mat");
     s=load(path,'model');model=s.model;
 else
-    path=fullfile(cfg.output,'six_model_stream',"model_rf_"+lower(method)+".mat");
+    path=fullfile(cfg.output,'models',"model_rf_"+lower(method)+".mat");
     s=load(path,'model');model=s.model;
 end
 assert(string(model.kind)==classifier&&string(model.method)==method,'eba:SixRuntimeModel','Model identity mismatch.');
@@ -58,7 +58,7 @@ report=struct('classifier',classifier,'method',method,'model_sha256',eba.hash(pa
     'shared_endpoints_sha256',eba.hash(ends,'numeric'), ...
     'policy','Fresh MATLAB process; matched signal/endpoints; candidate-specific trailing window; two warmups; 100 repetitions; compute-only, no model load or data generation in timing', ...
     'memory_scope','Whole MATLAB process high-water RSS, not isolated model allocation');
-out=fullfile(cfg.output,'six_model_stream',"runtime_"+lower(classifier)+"_"+lower(method)+".json");
+out=fullfile(cfg.output,'runtime',"runtime_"+lower(classifier)+"_"+lower(method)+".json");
 eba.json(out,report);writetable(array2table([values,representation],'VariableNames', ...
     {'feature_s','classification_s','severity_s','state_s','total_s','representation_bytes'}), ...
     replace(out,'.json','.csv'));

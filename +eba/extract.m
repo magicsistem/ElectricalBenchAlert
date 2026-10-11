@@ -15,7 +15,7 @@ assert(all(F.split~="test") || mode=="final",'eba:TestFirewall','Feature extract
 if string(mode)=="final",eba.requireFrozen(cfg,'verify',F);end
 assert(~isempty(F),'eba:ExtractEmpty','No families requested.');
 [key,famDigest]=eba.featureCacheKey(F,method,parameters,cfg,mode,snrs,realizations);
-folder=fullfile(cfg.output,'feature_cache');if ~isfolder(folder),mkdir(folder);end
+folder=fullfile(cfg.output,'cache','features');if ~isfolder(folder),mkdir(folder);end
 path=fullfile(folder,[key '.mat']);
 if isfile(path)
     S=load(path,'X','P','info');X=S.X;P=S.P;info=S.info;

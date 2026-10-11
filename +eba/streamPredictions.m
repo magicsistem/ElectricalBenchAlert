@@ -35,7 +35,7 @@ key=eba.hash(jsonencode(struct('schedule',schedule,'window_samples',N,'hop_sampl
     'parameters',model.parameters,'prediction_contract',predictionContract,'model_sha256',validatedModelHash,'source_sha256',{digests}, ...
     'config_sha256',eba.hash(jsonencode(actualConfig)),'MATLAB_version',version, ...
     'toolbox_versions_sha256',eba.hash(jsonencode(ver)))));
-folder=fullfile(cfg.output,'stream_prediction_cache');if ~isfolder(folder),mkdir(folder);end
+folder=fullfile(cfg.output,'cache','stream_predictions');if ~isfolder(folder),mkdir(folder);end
 path=fullfile(folder,key+".mat");ends=N:hop:schedule.n_samples;
 if useCache && isfile(path)
     saved=load(path,'result','signature','numeric_sha256','metadata_sha256');result=saved.result;
