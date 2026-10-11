@@ -188,7 +188,7 @@ changed=model;changed.fitted=other.fitted;
 rejects(@() eba.streamPredictions(unitSchedule,changed,cacheCfg,modelPath,true),'eba:StreamModelMutation');
 changed=model;changed.mean(1)=changed.mean(1)+.01;
 rejects(@() eba.streamPredictions(unitSchedule,changed,cacheCfg,modelPath,true),'eba:StreamModelMutation');
-files=dir(fullfile(folder,'stream_prediction_cache','*.mat'));assert(isscalar(files));path=fullfile(files.folder,files.name);
+files=dir(fullfile(folder,'cache','stream_predictions','*.mat'));assert(isscalar(files));path=fullfile(files.folder,files.name);
 saved=load(path);saved.result.confidence(1)=.123;save(path,'-struct','saved','-v7');
 rejects(@() eba.streamPredictions(unitSchedule,model,cacheCfg,modelPath,true),'eba:StreamCacheMutation');
 short=unitSchedule;short.n_samples=model.window_samples-1;
