@@ -1,10 +1,12 @@
 # ElectricalBenchAlert
 
-MATLAB benchmark of six continuous power quality event detection pipelines. This checkout contains the frozen validation run and only the source needed to inspect, verify, and reproduce it.
+MATLAB benchmark of six continuous power quality event detection pipelines. Version 1.0.0 (tag `v1.0.0`) freezes the source, the validation run and its results, with only what is needed to inspect, verify and reproduce it. See `CHANGELOG.md` for the release contents.
+
+Authors: Miguel Jhosua Benavides Castillo, Jesse Berenice Correa Reyes, Tomas Wesly Ponce Moscoso and Alvaro Dario Mendez Patilla. Citation metadata is in `CITATION.cff`.
 
 ## Frozen run
 
-The benchmark pairs FFT/STFT/DWT with SVM and FFT/ST/CWT with Random Forest across the same 864 validation families, at 20 dB with one noise realization per family. The original test split was inspected in an earlier superseded phase, so these results are validation evidence, not a confirmatory test.
+The benchmark pairs FFT/STFT/DWT with SVM and FFT/ST/CWT with Random Forest across the same 864 validation families, at 20 dB with one noise realization per family. The original test split was inspected in an earlier development phase, so these results are validation evidence, not an untouched final-test estimate.
 
 | Pipeline | Event F1 [95% CI] | Recall | False alarms/min | Detection latency | Compute p95 / hop | Process RSS | Model size |
 |---|---:|---:|---:|---:|---:|---:|---:|
@@ -66,3 +68,7 @@ matlab -batch "startup; addpath('scripts'); run_six_model_selection; run_six_mod
 ```
 
 Runtime results depend on hardware and are measured in fresh MATLAB processes with a shared signal, shared decision endpoints, two warmups, and 100 repetitions. The checked-in manifests retain the original environment and artifact hashes.
+
+## Scope
+
+The benchmark is synthetic and stops at the CONFIRMED event. ESP32 acquisition, MQTT transport, the mobile app and regulatory compliance monitoring are proposed future work and are not implemented in this release.
