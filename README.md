@@ -90,4 +90,4 @@ Broker: the host and the ESP32 use the public test broker `tcp://broker.hivemq.c
 
 ## Scope
 
-The benchmark is synthetic and stops at the CONFIRMED event. Version 1.1.0 demonstrates the acquisition and alert chain in simulation only: no real hardware or grid connection, no real-time processing (RTF 1.688), the public test broker, and no mobile app yet. Regulatory compliance monitoring is not implemented.
+The benchmark is synthetic and stops at the CONFIRMED event. Version 1.1.0 demonstrates the acquisition and alert chain in simulation only: no real hardware or grid connection, no real-time processing (RTF 1.688), and the public test broker. Regulatory compliance monitoring is not implemented.

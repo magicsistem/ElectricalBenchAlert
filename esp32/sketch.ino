@@ -7,7 +7,7 @@
 // Contrato MQTT (plan v1.1.0):
 //   eba/sim01/config   ESP32 -> host, retenido: escala del ADC y del acondicionamiento
 //   eba/sim01/samples  ESP32 -> host, QoS 0: seq, t0_sample, n, enc=u16le-b64, data
-//   eba/sim01/events   host -> ESP32 y app, QoS 1: type, event_id, class, tiempos
+//   eba/sim01/events   host -> ESP32, QoS 1: type, event_id, class, tiempos
 //
 // El tiempo de cada muestra es su indice / 10,000 (t0_sample = primer indice
 // del bloque). No depende de la hora de llegada ni de la velocidad de Wokwi.

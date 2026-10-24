@@ -23,7 +23,7 @@ Simulated end-to-end demo on top of the frozen v1.0.0 model. Nothing in `+eba/`,
 - A clean demo signal is not used: 12-bit ADC quantization of a clean signal makes the model report `impulsive_transient` on normal voltage (false alarms). At 20 dB, the validation condition, quantization has no effect.
 - Not real time (RTF 1.688); timestamps are simulated (sample index / 10,000). The ESP32 reads one sample ahead of the table (0.1 ms).
 - The broker is the public HiveMQ test broker.
-- The mobile app and regulatory compliance monitoring are not implemented.
+- Regulatory compliance monitoring is not implemented.
 
 ## [1.0.0] — 2026-10-10
 
@@ -50,7 +50,7 @@ First stable release. It freezes the source, the six-model validation run and it
 ### Scope
 
 - Results are validation evidence. The historical test split had been inspected during an earlier development phase, so this release does not report an untouched final-test estimate.
-- ESP32 acquisition, MQTT transport, mobile app and regulatory compliance monitoring are not implemented.
+- ESP32 acquisition, MQTT transport and regulatory compliance monitoring are not implemented.
 
 ## [0.1.0] — 2026-09-28
 
