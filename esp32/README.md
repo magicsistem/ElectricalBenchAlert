@@ -33,7 +33,6 @@ instantes. Es una demostración de integración, no una nueva medición del dese
 | `diagram.json` | Circuito: chip → GPIO34 (señal), GPIO35 (referencia), GPIO25 → RUN, END → GPIO26, OLED I2C (21/22), LEDs en 18/19/23 con 220 Ω |
 | `demo11_ground_truth.csv` | Verdad de cada evento (solo para comparar; el host nunca la usa) |
 | `demo11_manifest.json` | Familias, n, escala, error máximo y SHA-256 de la tabla |
-| `secrets.example.h` | Plantilla de credenciales; `secrets.h` (ignorado por git) la reemplaza |
 | `libraries.txt` | PubSubClient, Adafruit GFX Library, Adafruit SSD1306, ArduinoJson |
 
 ## Regenerar la tabla y el chip (MATLAB, desde la raíz del repositorio)
@@ -54,16 +53,10 @@ respecto de `eba.continuousSignal` (hito H0).
 3. Library Manager → las cuatro librerías.
 4. Arrancar primero el host en MATLAB y después dar Run en Wokwi.
 
-## Credenciales (hito 5)
+## Broker
 
-- Sin `secrets.h` el sketch usa `Wokwi-GUEST` y el broker público `broker.hivemq.com:1883`, sin usuario.
-  Ese broker es de pruebas: cualquiera puede leer o publicar en `eba/sim01/...`; no admite datos sensibles.
-- Para un broker privado: copiar `secrets.example.h` a `secrets.h` y llenar host, puerto, usuario y
-  clave (y el certificado raíz si usa TLS). `secrets.h` está en `.gitignore`.
-- En el plan gratuito de Wokwi los proyectos son **públicos**: un `secrets.h` con claves reales pegado en
-  el proyecto quedaría visible. Usar un proyecto unlisted (plan pago) o la extensión de VS Code.
-- La ruta con usuario y TLS está escrita pero no se probó contra un broker real: todavía no hay uno.
-- El host MATLAB lee sus credenciales de `broker.local.json` (ver `broker.example.json` en la raíz).
+El ESP32 y el host usan el broker público de pruebas `broker.hivemq.com:1883`: cualquiera puede leer o
+publicar en `eba/sim01/...`, así que no admite datos sensibles.
 
 ## Lo que no se demuestra
 

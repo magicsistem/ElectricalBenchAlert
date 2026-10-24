@@ -86,7 +86,7 @@ matlab -batch "startup; addpath('scripts'); stream_host(SaveSamples='live.mat')"
 
 `check_stream_host` must print `CHECK_STREAM_HOST_PASS`. See `esp32/README.md` to set up the Wokwi project and regenerate the chip table.
 
-Broker and credentials: by default the host and the ESP32 use the public test broker `tcp://broker.hivemq.com:1883` without credentials, so anyone can read or publish on `eba/sim01/...`; it must not carry sensitive data. For a private broker, copy `broker.example.json` to `broker.local.json` (host) and `esp32/secrets.example.h` to `esp32/secrets.h` (ESP32); both local files are ignored by Git. Free Wokwi projects are public, so real ESP32 credentials must not be pasted into a free Wokwi project. The authenticated and TLS paths are written but not yet tested against a private broker. MQTT requires the Industrial Communication Toolbox.
+Broker: the host and the ESP32 use the public test broker `tcp://broker.hivemq.com:1883`, so anyone can read or publish on `eba/sim01/...`; it must not carry sensitive data. MQTT requires the Industrial Communication Toolbox.
 
 ## Scope
 

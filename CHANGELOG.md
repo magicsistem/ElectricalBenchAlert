@@ -11,7 +11,6 @@ Simulated end-to-end demo on top of the frozen v1.0.0 model. Nothing in `+eba/`,
 - `scripts/demo_sequence.m`: the demo sequence, one validation family per event class at 20 dB with noise realization 1 (34.375 s, 11 events).
 - `scripts/export_stream_signal.m`: milestone H0 exporter; int16 table (1e-4 p.u.), ground truth CSV, manifest with SHA-256, and a single-file Wokwi chip.
 - `esp32/`: Wokwi ESP32 sketch, circuit, table-driven grid-signal chip with an END pin, exported table and README.
-- Local credential files for a private broker (milestone 5): `broker.local.json` for the host and `esp32/secrets.h` for the ESP32, both ignored by Git, with committed examples.
 
 ### Verified
 
@@ -23,7 +22,7 @@ Simulated end-to-end demo on top of the frozen v1.0.0 model. Nothing in `+eba/`,
 
 - A clean demo signal is not used: 12-bit ADC quantization of a clean signal makes the model report `impulsive_transient` on normal voltage (false alarms). At 20 dB, the validation condition, quantization has no effect.
 - Not real time (RTF 1.688); timestamps are simulated (sample index / 10,000). The ESP32 reads one sample ahead of the table (0.1 ms).
-- The default broker is the public HiveMQ test broker without credentials. The authenticated and TLS paths are not yet tested against a private broker. Free Wokwi projects are public.
+- The broker is the public HiveMQ test broker.
 - The mobile app and regulatory compliance monitoring are not implemented.
 
 ## [1.0.0] — 2026-10-10
