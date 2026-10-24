@@ -1,0 +1,27 @@
+{
+  "sequence_id": "demo11",
+  "snr_db": 20,
+  "noise_realization": 1,
+  "seed": 1.228301E+6,
+  "Fs": 10000,
+  "n_samples": 343750,
+  "duration_s": 34.375,
+  "scale_pu": 0.0001,
+  "max_abs_error_pu": 4.9999791957411333E-5,
+  "table_int16_sha256": "c3aaa503529feb30fb63ad6d7a17e1fd5830171acb89d67254e957cac93efb4d",
+  "families": [
+    "C02_S2_D4_F00002",
+    "C03_S2_D4_F00003",
+    "C04_S2_D4_F00004",
+    "C05_S2_D4_F00010",
+    "C06_S2_D4_F00003",
+    "C07_S2_D4_F00001",
+    "C08_S2_D4_F00001",
+    "C09_S2_D4_F00007",
+    "C10_S2_D4_F00002",
+    "C11_S2_D4_F00002",
+    "C12_S2_D4_F00010"
+  ],
+  "n_events": 11,
+  "dataset_version": "2.0.0"
+}
