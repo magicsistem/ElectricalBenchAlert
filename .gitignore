@@ -13,3 +13,7 @@ experiments/generated/
 *.log
 .DS_Store
 Thumbs.db
+
+# Local broker and WiFi credentials (milestone 5): never committed
+broker.local.json
+esp32/secrets.h
