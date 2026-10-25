@@ -27,10 +27,10 @@
     [ "esp:TX", "$serialMonitor:RX", "", [] ],
     [ "esp:RX", "$serialMonitor:TX", "", [] ],
 
-    [ "esp:GND.1", "oled:GND", "black", [] ],
-    [ "esp:3V3", "oled:VCC", "red", [] ],
-    [ "esp:21", "oled:SDA", "blue", [] ],
-    [ "esp:22", "oled:SCL", "gold", [] ],
+    [ "esp:GND.1", "oled:GND", "black", [ "h-26.61", "v-315.6", "*", "v-18.46" ] ],
+    [ "esp:3V3", "oled:VCC", "red", [ "h-16.61", "v-184.8", "*", "v-12.46" ] ],
+    [ "esp:21", "oled:SDA", "blue", [ "h191.24", "v-238.8", "*", "v-18.46" ] ],
+    [ "esp:22", "oled:SCL", "gold", [ "h181.24", "v-204", "*", "v-12.46" ] ],
 
     [ "grid:OUT", "esp:34", "orange", [] ],
     [ "grid:REF", "esp:35", "violet", [] ],

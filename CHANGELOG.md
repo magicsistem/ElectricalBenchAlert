@@ -1,6 +1,6 @@
 # Changelog
 
-## [1.1.0] — unreleased
+## [1.1.0] — 2026-10-24
 
 Simulated end-to-end demo on top of the frozen v1.0.0 model. Nothing in `+eba/`, `config/` or `results/` changed and nothing was retrained.
 

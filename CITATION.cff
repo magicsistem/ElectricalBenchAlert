@@ -2,8 +2,8 @@ cff-version: 1.2.0
 message: Please cite this software when using its scientific code or generated results.
 type: software
 title: ElectricalBenchAlert
-version: 1.0.0
-date-released: 2026-10-10
+version: 1.1.0
+date-released: 2026-10-24
 authors:
   - given-names: Miguel Jhosua
     family-names: Benavides Castillo
