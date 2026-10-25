@@ -1,0 +1,52 @@
+{
+  "version": 1,
+  "author": "ElectricalBenchAlert",
+  "editor": "wokwi",
+  "parts": [
+    { "type": "board-esp32-devkit-c-v4", "id": "esp", "top": 0, "left": 0, "attrs": {} },
+    { "type": "board-ssd1306", "id": "oled", "top": -150, "left": 150, "attrs": { "i2cAddress": "0x3c" } },
+    {
+      "type": "chip-grid-signal",
+      "id": "grid",
+      "top": 40,
+      "left": -260,
+      "attrs": {
+        "vOffset": "1.30",
+        "gain": "0.0029498525",
+        "vNominal": "120"
+      }
+    },
+    { "type": "wokwi-led", "id": "led_g", "top": 230, "left": 180, "attrs": { "color": "green", "label": "NORMAL" } },
+    { "type": "wokwi-led", "id": "led_y", "top": 230, "left": 230, "attrs": { "color": "yellow", "label": "SOSPECHA" } },
+    { "type": "wokwi-led", "id": "led_r", "top": 230, "left": 280, "attrs": { "color": "red", "label": "CONFIRMADO" } },
+    { "type": "wokwi-resistor", "id": "r_g", "top": 190, "left": 170, "rotate": 90, "attrs": { "value": "220" } },
+    { "type": "wokwi-resistor", "id": "r_y", "top": 190, "left": 220, "rotate": 90, "attrs": { "value": "220" } },
+    { "type": "wokwi-resistor", "id": "r_r", "top": 190, "left": 270, "rotate": 90, "attrs": { "value": "220" } }
+  ],
+  "connections": [
+    [ "esp:TX", "$serialMonitor:RX", "", [] ],
+    [ "esp:RX", "$serialMonitor:TX", "", [] ],
+
+    [ "esp:GND.1", "oled:GND", "black", [ "h-26.61", "v-315.6", "*", "v-18.46" ] ],
+    [ "esp:3V3", "oled:VCC", "red", [ "h-16.61", "v-184.8", "*", "v-12.46" ] ],
+    [ "esp:21", "oled:SDA", "blue", [ "h191.24", "v-238.8", "*", "v-18.46" ] ],
+    [ "esp:22", "oled:SCL", "gold", [ "h181.24", "v-204", "*", "v-12.46" ] ],
+
+    [ "grid:OUT", "esp:34", "orange", [] ],
+    [ "grid:REF", "esp:35", "violet", [] ],
+    [ "esp:25", "grid:RUN", "cyan", [] ],
+    [ "grid:GND", "esp:GND.1", "black", [] ],
+    [ "grid:END", "esp:26", "blue", [] ],
+
+    [ "esp:18", "r_g:1", "green", [] ],
+    [ "r_g:2", "led_g:A", "green", [] ],
+    [ "led_g:C", "esp:GND.2", "black", [] ],
+    [ "esp:19", "r_y:1", "gold", [] ],
+    [ "r_y:2", "led_y:A", "gold", [] ],
+    [ "led_y:C", "esp:GND.2", "black", [] ],
+    [ "esp:23", "r_r:1", "red", [] ],
+    [ "r_r:2", "led_r:A", "red", [] ],
+    [ "led_r:C", "esp:GND.2", "black", [] ]
+  ],
+  "dependencies": {}
+}

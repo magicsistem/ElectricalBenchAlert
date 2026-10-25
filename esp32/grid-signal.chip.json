@@ -1,0 +1,6 @@
+{
+  "name": "grid-signal",
+  "author": "ElectricalBenchAlert",
+  "pins": ["OUT", "REF", "RUN", "END", "GND"],
+  "controls": []
+}

@@ -1,6 +1,6 @@
 # ElectricalBenchAlert
 
-MATLAB benchmark of six continuous power quality event detection pipelines. Version 1.0.0 (tag `v1.0.0`) freezes the source, the validation run and its results, with only what is needed to inspect, verify and reproduce it. See `CHANGELOG.md` for the release contents.
+MATLAB benchmark of six continuous power quality event detection pipelines. Version 1.0.0 (tag `v1.0.0`) freezes the source, the validation run and its results, with only what is needed to inspect, verify and reproduce it. Version 1.1.0 adds a simulated end-to-end demo (ESP32 in Wokwi → MQTT → MATLAB host → ESP32) on top of the frozen model, without retraining or changing any frozen file. See `CHANGELOG.md` for the release contents.
 
 Authors: Miguel Jhosua Benavides Castillo, Jesse Berenice Correa Reyes, Tomas Wesly Ponce Moscoso and Alvaro Dario Mendez Patilla. Citation metadata is in `CITATION.cff`.
 
@@ -25,7 +25,8 @@ The selected model is 72.35 MB. Its p95 processing time is 211 ms for a 125 ms h
 
 ```text
 +eba/        MATLAB package with the method (called as eba.<function>)
-scripts/     run_* drivers and verify_* checks
+scripts/     run_* drivers and verify_* checks; v1.1.0 stream host and demo export
+esp32/       v1.1.0 Wokwi project: ESP32 sketch, circuit, grid-signal chip and exported demo table
 tests/       MATLAB test suites (run_all_tests)
 config/      research_v2.json, the authoritative configuration
 contracts/   JSON schema of the confirmed event
@@ -69,6 +70,24 @@ matlab -batch "startup; addpath('scripts'); run_six_model_selection; run_six_mod
 
 Runtime results depend on hardware and are measured in fresh MATLAB processes with a shared signal, shared decision endpoints, two warmups, and 100 repetitions. The checked-in manifests retain the original environment and artifact hashes.
 
+## Simulated end-to-end demo (v1.1.0)
+
+A Wokwi ESP32 samples a simulated, conditioned grid signal with its 12-bit ADC1 at 10 kHz (simulated time), publishes 1,250-sample blocks over MQTT, and `scripts/stream_host.m` classifies 0.5 s windows every 125 ms with the frozen CWT-RF model and state settings (θ_on = 0.5, θ_off = 0.3, K = 3, 2 recovery windows). Each state change (SUSPECTED, CONFIRMED, ENDED, NORMAL, GAP) is published back with QoS 1 and shown on the ESP32 OLED and LEDs. Sample times are sample index / 10,000, so Wokwi and host slowness only add delay.
+
+The signal is `scripts/demo_sequence.m`: one validation family per event class (11 events, medium severity, duration stratum 4) in one continuous sequence at 20 dB with noise realization 1, the same condition as the six-model validation. `scripts/export_stream_signal.m` exports it as an int16 table for the Wokwi chip (`esp32/`, 343,750 samples, maximum error 5e-5 p.u.). A clean signal is not used: 12-bit quantization alone makes the model report `impulsive_transient` on normal voltage, while at 20 dB quantization has no effect.
+
+Observed in Wokwi on 2026-10-24: 9 of 11 events confirmed with the correct class and no false alarms; the oscillatory (47 ms) and impulsive (4 ms) transients are not confirmed. All 272 live windows reached the same state as the offline replay and the 18 CONFIRMED/ENDED messages were published at the same simulated times. This is an integration check, not a new performance estimate.
+
+```sh
+matlab -batch "startup; addpath('scripts'); check_stream_host"                      # host == eba.processStream, window by window
+matlab -batch "startup; addpath('scripts'); stream_host(Replay=true)"               # publish the demo events without an ESP32
+matlab -batch "startup; addpath('scripts'); stream_host(SaveSamples='live.mat')"    # live with Wokwi; start the host first
+```
+
+`check_stream_host` must print `CHECK_STREAM_HOST_PASS`. See `esp32/README.md` to set up the Wokwi project and regenerate the chip table.
+
+Broker: the host and the ESP32 use the public test broker `tcp://broker.hivemq.com:1883`, so anyone can read or publish on `eba/sim01/...`; it must not carry sensitive data. MQTT requires the Industrial Communication Toolbox.
+
 ## Scope
 
-The benchmark is synthetic and stops at the CONFIRMED event. ESP32 acquisition, MQTT transport, the mobile app and regulatory compliance monitoring are proposed future work and are not implemented in this release.
+The benchmark is synthetic and stops at the CONFIRMED event. Version 1.1.0 demonstrates the acquisition and alert chain in simulation only: no real hardware or grid connection, no real-time processing (RTF 1.688), and the public test broker. Regulatory compliance monitoring is not implemented.

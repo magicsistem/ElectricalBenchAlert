@@ -1,0 +1,12 @@
+event_id,family_id,class_name,project_severity,start_sample,end_sample,start_s,end_s
+demo11:truth:000001,C09_S2_D4_F00007,notching,medium,29509,42042,2.9509,4.2042
+demo11:truth:000002,C11_S2_D4_F00002,voltage_swell_harmonics,medium,62042,66473,6.2042,6.6473
+demo11:truth:000003,C10_S2_D4_F00002,voltage_sag_harmonics,medium,86473,90059,8.6473,9.0059
+demo11:truth:000004,C07_S2_D4_F00001,oscillatory_transient,medium,110059,110535,11.0059,11.0535
+demo11:truth:000005,C03_S2_D4_F00003,voltage_swell,medium,130535,133624,13.0535,13.3624
+demo11:truth:000006,C08_S2_D4_F00001,impulsive_transient,medium,153624,153664,15.3624,15.3664
+demo11:truth:000007,C05_S2_D4_F00010,harmonics,medium,173664,194999,17.3664,19.4999
+demo11:truth:000008,C12_S2_D4_F00010,harmonics_flicker,medium,214999,236852,21.4999,23.6852
+demo11:truth:000009,C06_S2_D4_F00003,flicker,medium,256852,278436,25.6852,27.8436
+demo11:truth:000010,C02_S2_D4_F00002,voltage_sag,medium,298436,301504,29.8436,30.1504
+demo11:truth:000011,C04_S2_D4_F00004,interruption,medium,321504,324948,32.1504,32.4948

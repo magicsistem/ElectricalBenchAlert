@@ -1,0 +1,8 @@
+{
+  "broker": "tcp://broker.hivemq.com",
+  "port": 1883,
+  "base": "eba/sim01",
+  "username": "",
+  "password": "",
+  "ca_root_certificate": ""
+}

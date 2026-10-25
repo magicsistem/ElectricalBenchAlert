@@ -1,5 +1,30 @@
 # Changelog
 
+## [1.1.0] — 2026-10-24
+
+Simulated end-to-end demo on top of the frozen v1.0.0 model. Nothing in `+eba/`, `config/` or `results/` changed and nothing was retrained.
+
+### Added
+
+- `scripts/stream_host.m`: MQTT inference host. Subscribes to `eba/sim01/config` and `eba/sim01/samples`, converts ADC counts to p.u. with the published scale, classifies arrived 0.5 s windows every 125 ms with CWT-RF and the frozen state settings, and publishes SUSPECTED, CONFIRMED, ENDED, NORMAL and GAP to `eba/sim01/events` with QoS 1. Replay mode without an ESP32; optional capture of received blocks (`SaveSamples`).
+- `scripts/check_stream_host.m`: milestone H2 check; the host matches `eba.processStream(..., false)` window by window (272 windows, identical states, classes and confidences).
+- `scripts/demo_sequence.m`: the demo sequence, one validation family per event class at 20 dB with noise realization 1 (34.375 s, 11 events).
+- `scripts/export_stream_signal.m`: milestone H0 exporter; int16 table (1e-4 p.u.), ground truth CSV, manifest with SHA-256, and a single-file Wokwi chip.
+- `esp32/`: Wokwi ESP32 sketch, circuit, table-driven grid-signal chip with an END pin, exported table and README.
+
+### Verified
+
+- Live Wokwi run (2026-10-24): 9 of 11 events confirmed with the correct class, no false alarms; same 272 window states and same 18 CONFIRMED/ENDED times as the offline replay. The oscillatory and impulsive transients are not confirmed.
+- The exported table reproduces `eba.continuousSignal` within 5e-5 p.u.; the chip compiled with a stub `wokwi-api.h` reproduces the table within the same bound.
+- `run_all_tests` passes (`ALL_MATLAB_TESTS_PASSED suites=2`).
+
+### Notes
+
+- A clean demo signal is not used: 12-bit ADC quantization of a clean signal makes the model report `impulsive_transient` on normal voltage (false alarms). At 20 dB, the validation condition, quantization has no effect.
+- Not real time (RTF 1.688); timestamps are simulated (sample index / 10,000). The ESP32 reads one sample ahead of the table (0.1 ms).
+- The broker is the public HiveMQ test broker.
+- Regulatory compliance monitoring is not implemented.
+
 ## [1.0.0] — 2026-10-10
 
 First stable release. It freezes the source, the six-model validation run and its results as they stand after the work since v0.1.0. No experiment was rerun for this release.
@@ -25,7 +50,7 @@ First stable release. It freezes the source, the six-model validation run and it
 ### Scope
 
 - Results are validation evidence. The historical test split had been inspected during an earlier development phase, so this release does not report an untouched final-test estimate.
-- ESP32 acquisition, MQTT transport, mobile app and regulatory compliance monitoring are not implemented.
+- ESP32 acquisition, MQTT transport and regulatory compliance monitoring are not implemented.
 
 ## [0.1.0] — 2026-09-28
 
